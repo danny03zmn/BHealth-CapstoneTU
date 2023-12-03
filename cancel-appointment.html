@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title> Cancel Appointment list | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="Hospital Appointment System" name="description" />
+    <meta content="BHealth Buddy" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="/assets/images/favicon.ico">
+    <!-- App css -->
+    <link href="/assets/css/bootstrap.min.css" id="bootstrap-light" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/assets/libs/toastr/toastr.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+</head>
+
+    <body data-topbar="dark" data-layout="horizontal">
+    
+<!-- Loader -->
+<div id="preloader">
+    <div id="status">
+        <div class="spinner-chase">
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+        </div>
+    </div>
+</div>
+<!-- Begin page -->
+<div id="layout-wrapper">
+
+    <div class="topnav">
+        <div class="container-fluid">
+            <nav class="navbar navbar-light navbar-expand-lg topnav-menu">
+                <a href="/index.html" class="logo logo-light">
+                    <span class="logo-lg">
+                        <img src="/assets/images/logo-light.png" alt="" height="42">
+                    </span>
+                </a>
+                <button type="button" class="btn btn-sm px-3 font-size-16 d-lg-none header-item waves-effect waves-light collapsed" data-toggle="collapse" data-target="#topnav-menu-content" aria-expanded="false">
+                    <i class="fa fa-fw fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="topnav-menu-content">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/index.html">
+                                <i class="bx bx-home-circle mr-2"></i>Dashboard
+                            </a>
+                        </li>
+                                                <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle arrow-none" href="#" id="topnav-layout" role="button"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="bx bx-user-circle mr-2"></i>Doctors <div class="arrow-down">
+                                    </div>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="topnav-layout">
+                                    <a href="/doctor.html" class="dropdown-item">List of Doctors</a>
+                                    <a href="/doctor/create.html"
+                                        class="dropdown-item">Add New Doctor</a>
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle arrow-none" href="#" id="topnav-layout" role="button"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="bx bx-user-circle mr-2"></i>Patients <div
+                                        class="arrow-down"></div>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="topnav-layout">
+                                    <a href="#"
+                                        class="dropdown-item">List of Patients</a>
+                                    <a href="#"
+                                        class="dropdown-item">Add New Patient</a>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/today-appointment.html">
+                                    <i class='bx bx-list-plus mr-2'></i>Appointment List
+                                </a>
+                            </li>
+                                        </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    <div class="main-content">
+        <div class="page-content">
+            <!-- Start content -->
+            <div class="container-fluid">
+                        <!-- start page title -->
+        <!-- start page title -->
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <h4 class="mb-0 font-size-18">Appointment List</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="index.html"">Dashboard</a></li>
+                                        <li class="breadcrumb-item">Appointment</li>
+                                                        </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end page title -->
+        <!-- end page title -->
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/today-appointment.html">
+                                    <span class="d-block d-sm-none"><i class="fas fa-calendar-day"></i></span>
+                                    <span class="d-none d-sm-block">Today&#039;s Appointment List</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/pending-appointment.html">
+                                    <span class="d-block d-sm-none"><i class="far fa-calendar"></i></span>
+                                    <span class="d-none d-sm-block">Pending Appointment List</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/upcoming-appointment.html">
+                                    <span class="d-block d-sm-none"><i class="fas fa-calendar-week"></i></span>
+                                    <span class="d-none d-sm-block">Upcoming Appointment List</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/complete-appointment.html">
+                                    <span class="d-block d-sm-none"><i class="fas fa-check-square"></i></span>
+                                    <span class="d-none d-sm-block">Complete Appointment List</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#">
+                                    <span class="d-block d-sm-none"><i class="fas fa-window-close"></i></span>
+                                    <span class="d-none d-sm-block">Cancel Appointment List</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <!-- Tab panes -->
+                        <div class="tab-content p-3 text-muted">
+                            <div class="tab-pane active" id="PendingAppointmentList" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered dt-responsive nowrap "
+                                        style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>Sr. No</th>
+                                                <th>Doctor Name</th>
+                                                <th>Patient Name</th>
+                                                <th>Patient Contact No</th>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                                                                                                                                                                                                                                                                <tr>
+                                                    <td>1</td>
+                                                    <td>Doctor Doctorly</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-20</td>
+                                                    <td>14:30:00 to 15:00:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>2</td>
+                                                    <td>Ruvimbo Mangwende</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-18</td>
+                                                    <td>10:22:00 to 10:27:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>3</td>
+                                                    <td>Adam Booth</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-22</td>
+                                                    <td>08:34:00 to 08:38:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>4</td>
+                                                    <td>Ropa Maramba</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-20</td>
+                                                    <td>17:30:00 to 18:30:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>5</td>
+                                                    <td>Doctor Doctorly</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-16</td>
+                                                    <td>14:00:00 to 14:30:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>6</td>
+                                                    <td>Ruvimbo Mangwende</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-14</td>
+                                                    <td>10:12:00 to 10:17:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>7</td>
+                                                    <td>Doctor Doctorly</td>
+                                                    <td>Haylee Bernhard
+                                                    </td>
+                                                    <td>1225659050</td>
+                                                    <td>2023-11-09</td>
+                                                    <td>11:30:00 to 12:00:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>8</td>
+                                                    <td>Ropa Maramba</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-13</td>
+                                                    <td>17:30:00 to 18:30:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>9</td>
+                                                    <td>Ropa Maramba</td>
+                                                    <td>Patient Doctorly
+                                                    </td>
+                                                    <td>5142323114</td>
+                                                    <td>2023-11-07</td>
+                                                    <td>17:30:00 to 18:30:00</td>
+                                                </tr>
+                                                                                            <tr>
+                                                    <td>10</td>
+                                                    <td>Doctor Doctorly</td>
+                                                    <td>Marisa Rutherford
+                                                    </td>
+                                                    <td>1143734100</td>
+                                                    <td>2023-11-06</td>
+                                                    <td>08:40:00 to 09:10:00</td>
+                                                </tr>
+                                                                                    </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-12 text-center mt-3">
+                                    <div class="d-flex justify-content-start">
+                                        Showing 1 to
+                                        10 of 297
+                                        entries
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <nav>
+        <ul class="pagination">
+            
+                            <li class="page-item disabled" aria-disabled="true" aria-label="&laquo; Previous">
+                    <span class="page-link" aria-hidden="true">&lsaquo;</span>
+                </li>
+            
+            
+                            
+                
+                
+                                                                                        <li class="page-item active" aria-current="page"><span class="page-link">1</span></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">5</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">6</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">7</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">8</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">9</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">10</a></li>
+                                                                                        
+                                    <li class="page-item disabled" aria-disabled="true"><span class="page-link">...</span></li>
+                
+                
+                                            
+                
+                
+                                                                                        <li class="page-item"><a class="page-link" href="#">29</a></li>
+                                                                                                <li class="page-item"><a class="page-link" href="#">30</a></li>
+                                                                        
+            
+                            <li class="page-item">
+                    <a class="page-link" href="#" rel="next" aria-label="Next &raquo;">&rsaquo;</a>
+                </li>
+                    </ul>
+    </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                </div> <!-- content -->
+        </div>
+        <footer class="footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6">
+                2023 © BHealth Buddy
+            </div>
+            <div class="col-sm-6">
+                <div class="text-sm-right d-none d-sm-block">
+                    Design &amp; Develop by Team WareX
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+    </div>
+    <!-- ============================================================== -->
+    <!-- End Right content here -->
+    <!-- ============================================================== -->
+</div>
+<!-- END wrapper -->
+
+<!-- Right Sidebar -->
+<!-- Right Sidebar -->
+        <div class="right-bar">
+            <div data-simplebar class="h-100">
+                <div class="rightbar-title px-3 py-4">
+                    <a href="javascript:void(0);" class="right-bar-toggle float-right">
+                        <i class="mdi mdi-close noti-icon"></i>
+                    </a>
+                    <h5 class="m-0">Settings</h5>
+                </div>
+                <!-- Settings -->
+                <hr class="mt-0" />
+                <h6 class="text-center">Choose Layouts</h6>
+                <div class="p-4">
+                    <div class="mb-2">
+                        <img src="http://doctorly.themesbrand.website/assets/images/layouts/layout-1.jpg" class="img-fluid img-thumbnail" alt="">
+                    </div>
+                    <div class="custom-control custom-switch mb-3">
+                        <input type="checkbox" class="custom-control-input theme-choice" id="light-mode-switch"
+                            checked />
+                        <label class="custom-control-label" for="light-mode-switch">Light Mode</label>
+                    </div>
+                    <div class="mb-2">
+                        <img src="http://doctorly.themesbrand.website/assets/images/layouts/layout-2.jpg" class="img-fluid img-thumbnail" alt="">
+                    </div>
+                    <div class="custom-control custom-switch mb-3">
+                        <input type="checkbox" class="custom-control-input theme-choice" id="dark-mode-switch"
+                            data-bsStyle="http://doctorly.themesbrand.website/assets/css/bootstrap-dark.min.css"
+                            data-appStyle="http://doctorly.themesbrand.website/assets/css/app-dark.min.css" />
+                        <label class="custom-control-label" for="dark-mode-switch">Dark Mode</label>
+                    </div>
+                    <div class="mb-2">
+                        <img src="http://doctorly.themesbrand.website/assets/images/layouts/layout-3.jpg" class="img-fluid img-thumbnail" alt="">
+                    </div>
+                    <div class="custom-control custom-switch mb-5">
+                        <input type="checkbox" class="custom-control-input theme-choice" id="rtl-mode-switch"
+                            data-appStyle="http://doctorly.themesbrand.website/assets/css/app-rtl.min.css" />
+                        <label class="custom-control-label" for="rtl-mode-switch">RTL Mode</label>
+                    </div>
+                    <a href="javascript::void(0);" class="btn btn-primary btn-block mt-3" target="_blank"><i
+                            class="mdi mdi-cart mr-1"></i> Purchase Now</a>
+                </div>
+            </div> <!-- end slim-scroll-menu-->
+        </div>
+        <!-- /Right-bar -->
+<!-- END Right Sidebar -->
+
+<!-- JAVASCRIPT -->
+        <script src="http://doctorly.themesbrand.website/assets/libs/jquery/jquery.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/bootstrap/bootstrap.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/metismenu/metismenu.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/simplebar/simplebar.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/node-waves/node-waves.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/toastr/toastr.min.js"></script>
+
+                <!-- Plugins js -->
+        <script src="http://doctorly.themesbrand.website/assets/libs/jszip/jszip.min.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/libs/pdfmake/pdfmake.min.js"></script>
+        <!-- Init js-->
+        <script src="http://doctorly.themesbrand.website/assets/js/pages/notification.init.js"></script>
+        <script src="http://doctorly.themesbrand.website/assets/js/pages/appointment.js"></script>
+            <!-- App js -->
+        <script src="http://doctorly.themesbrand.website/assets/js/app.min.js"></script>
+        <script>
+                                                    function notifyCount(){
+                var load_count = $('.badge-pill').html();
+                var token = $("input[name='_token']").val();
+                $.ajax({
+                type: "get",
+                url: "/notification-count",
+                data:{
+                _token: token,
+                },
+                success: function (data) {
+                $('.badge-pill').html(data);
+                if(load_count < data){ notificationShow(); } }, error:function (data){ console.log(data); } }); }
+                    setInterval(function() { notifyCount(); }, 10000);                             function notificationShow(){
+                var token = $("input[name='_token']").val();
+                $.ajax({
+                type: "POST",
+                url: "/top-notification",
+                data:{
+                _token: token,
+                },
+                success: function (data) {
+                $('.notification-list-scroll').html(data.options);
+                },
+                error:function (data){
+                console.log(data);
+                }
+                });
+                }
+                setInterval(function() {
+                notificationShow();
+                }, 5000);
+                    </script>
+        </body>
+
+</html>
