@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Login | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="Hospital Management System" name="description" />
+    <meta content="Doctorly" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="/assets/images/favicon.ico">
+    <!-- App css -->
+    <link href="/assets/css/bootstrap.min.css" id="bootstrap-light" rel="stylesheet" type="text/css"/>
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="/assets/libs/toastr/toastr.min.css">
+
+</head>
+
+
+    <body>
+    
+<div id="preloader">
+    <div id="status">
+        <div class="spinner-chase">
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+            <div class="chase-dot"></div>
+        </div>
+    </div>
+</div>
+
+        <div class="account-pages my-5 pt-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6 col-xl-5">
+                        <div class="card overflow-hidden">
+                            <div class="bg-primary-subtle">
+                                <div class="row">
+                                    <div class="col-7">
+                                        <div class="text-primary p-4">
+                                            <h5 class="text-primary">Welcome Back !</h5>
+                                            <p>Sign in to continue to BHealth Buddy.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-5 align-self-end">
+                                        <img src="/assets/images/profile-img.png" alt=""
+                                            class="img-fluid">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="p-2">
+                                    
+                                    <form class="form-horizontal" method="POST" id="loginForm">
+                                        <div id="errorMessage" style="display:none;" class="alert alert-danger"></div>
+                                        <input type="hidden" name="_token" value="">
+                                                                                                                        <div class="mb-3">
+                                            <label for="username">Username <span
+                                                    class="text-danger">*</span></label>
+                                            <input name="email" type="email" id="email" class="form-control" value="" placeholder="Enter username" autocomplete="email" autofocus>
+
+                                                                                    </div>
+                                        <div class="mb-3">
+                                            <label for="userpassword">Password <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="password" name="password" id="pass" class="form-control" value="" placeholder="Enter password">
+
+                                                                                    </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" name="remember"
+                                                id="customControlInline">
+                                            <label class="form-check-label"
+                                                for="customControlInline">Remember me</label>
+                                        </div>
+                                        <div class="mt-3">
+                                            <button class="btn btn-primary w-100 waves-effect waves-light"
+                                                type="submit">Log In</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+<!-- JAVASCRIPT -->
+<script src="/assets/libs/jquery/jquery.min.js"></script>
+<script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
+<script src="/assets/libs/metismenu/metismenu.min.js"></script>
+<script src="/assets/libs/simplebar/simplebar.min.js"></script>
+<script src="/assets/libs/toastr/toastr.min.js"></script>
+<script src="/assets/libs/node-waves/node-waves.min.js"></script>
+
+
+        <script>
+            function login(e) {
+                var email = e.closest('.d-flex').querySelector('.email').innerHTML.slice(8);
+                var password = e.closest('.d-flex').querySelector('.pass').innerHTML.slice(7);
+                document.getElementById('email').value = email;
+                document.getElementById('pass').value = password;
+            }
+        </script>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent the default form submission
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+  
+      fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.redirect) {
+          // If login is successful, redirect to the provided URL
+          window.location.href = data.redirect;
+        } else {
+          // If login is unsuccessful, show the error message
+          const errorMessage = document.getElementById('errorMessage');
+          errorMessage.textContent = data.message; // Set the error message text
+          errorMessage.style.display = 'block'; // Make the error message visible
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  </script>
+  
+    <!-- App js -->
+    <script src="/assets/js/app.min.js"></script>
+    <script src="/server.js"></script>
+</body>
+
+</html>

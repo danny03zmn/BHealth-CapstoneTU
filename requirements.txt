@@ -1,0 +1,5 @@
+body-parser
+dotenv
+express
+express-session
+mongoose

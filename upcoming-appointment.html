@@ -65,19 +65,7 @@
                                         class="dropdown-item">Add New Doctor</a>
                                 </div>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle arrow-none" href="#" id="topnav-layout" role="button"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="bx bx-user-circle mr-2"></i>Patients <div
-                                        class="arrow-down"></div>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="topnav-layout">
-                                    <a href="#"
-                                        class="dropdown-item">List of Patients</a>
-                                    <a href="#"
-                                        class="dropdown-item">Add New Patient</a>
-                                </div>
-                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link" href="/today-appointment.html">
                                     <i class='bx bx-list-plus mr-2'></i>Appointment List
@@ -144,7 +132,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link " href="">
+                                <a class="nav-link " href="/cancel-appointment.html">
                                     <span class="d-block d-sm-none"><i class="fas fa-window-close"></i></span>
                                     <span class="d-none d-sm-block">Cancel Appointment List</span>
                                 </a>
@@ -166,108 +154,8 @@
                                                 <th>Time</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                                                                                                                                                                                                                                                                <tr>
-                                                    <td>1</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> Marisa Rutherford
-                                                    </td>
-                                                    <td> 1143734100 </td>
-                                                    <td>2023-11-14</td>
-                                                    <td>08:00:00 to 08:09:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>2</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> Ms. Leilani Kub IV
-                                                    </td>
-                                                    <td> 1218594566 </td>
-                                                    <td>2023-11-16</td>
-                                                    <td>12:10:00 to 12:40:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>3</td>
-                                                    <td> Ruvimbo Mangwende
-                                                    </td>
-                                                    <td> Patient Buddy
-                                                    </td>
-                                                    <td> 5142323114 </td>
-                                                    <td>2023-11-26</td>
-                                                    <td>10:12:00 to 10:17:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>4</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> Ms. Mafalda Schumm V
-                                                    </td>
-                                                    <td> 1349669893 </td>
-                                                    <td>2023-12-18</td>
-                                                    <td>03:02:00 to 03:32:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>5</td>
-                                                    <td> Adam Booth
-                                                    </td>
-                                                    <td> Patient Buddy
-                                                    </td>
-                                                    <td> 5142323114 </td>
-                                                    <td>2023-11-13</td>
-                                                    <td>12:00:00 to 12:04:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>6</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> rtty czero
-                                                    </td>
-                                                    <td> 0917726018 </td>
-                                                    <td>2023-11-16</td>
-                                                    <td>08:40:00 to 09:10:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>7</td>
-                                                    <td> demozxzxc dadasd
-                                                    </td>
-                                                    <td> Patient Buddy
-                                                    </td>
-                                                    <td> 5142323114 </td>
-                                                    <td>2023-11-27</td>
-                                                    <td>11:34:00 to 11:37:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>8</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> Marisa Rutherford
-                                                    </td>
-                                                    <td> 1143734100 </td>
-                                                    <td>2023-11-30</td>
-                                                    <td>08:00:00 to 08:30:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>9</td>
-                                                    <td> Doctor Buddy
-                                                    </td>
-                                                    <td> Imran Ahmed
-                                                    </td>
-                                                    <td> 1234567890 </td>
-                                                    <td>2023-11-22</td>
-                                                    <td>00:32:00 to 01:02:00</td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>10</td>
-                                                    <td> Ruvimbo Mangwende
-                                                    </td>
-                                                    <td> Patient Buddy
-                                                    </td>
-                                                    <td> 5142323114 </td>
-                                                    <td>2023-11-18</td>
-                                                    <td>10:12:00 to 10:17:00</td>
-                                                </tr>
-                                                                                    </tbody>
+                                        <tbody id="appointmentList"></tbody>
+
                                     </table>
                                 </div>
                                 <div class="col-md-12 text-center mt-3">
@@ -325,6 +213,7 @@
 
 
             <!-- JAVASCRIPT -->
+            <script src="/models/fetch-upcoming-appointments.js"></script>
             <script src="/assets/libs/jquery/jquery.min.js"></script>
             <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
             <script src="/assets/libs/metismenu/metismenu.min.js"></script>

@@ -66,19 +66,7 @@
                                         class="dropdown-item">Add New Doctor</a>
                                 </div>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle arrow-none" href="#" id="topnav-layout" role="button"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="bx bx-user-circle mr-2"></i>Patients <div
-                                        class="arrow-down"></div>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="topnav-layout">
-                                    <a href="#"
-                                        class="dropdown-item">List of Patients</a>
-                                    <a href="#"
-                                        class="dropdown-item">Add New Patient</a>
-                                </div>
-                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link" href="/today-appointment.html">
                                     <i class='bx bx-list-plus mr-2'></i>Appointment List
@@ -144,7 +132,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link " href="">
+                                <a class="nav-link " href="/cancel-appointment.html">
                                     <span class="d-block d-sm-none"><i class="fas fa-window-close"></i></span>
                                     <span class="d-none d-sm-block">Cancel Appointment List</span>
                                 </a>
@@ -164,57 +152,11 @@
                                                 <th>Patient Contact No</th>
                                                 <th>Date</th>
                                                 <th>Time</th>
-                                                <th>Status</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                                                                                                                                                                                                                                                                <tr>
-                                                    <td>1</td>
-                                                    <td> BHealth Buddy Doctor
-                                                    </td>
-                                                    <td> Marisa Rutherford
-                                                    </td>
-                                                    <td> 1143734100 </td>
-                                                    <td>2023-11-07</td>
-                                                    <td>15:30:00 to 16:00:00</td>
-                                                    <td>
-                                                                                                                    <span class="badge  badge-danger ">Cancel</span>
-                                                                                                            </td>
-                                                    <td>
-                                                                                                            </td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>2</td>
-                                                    <td> BHealth Buddy Doctor
-                                                    </td>
-                                                    <td> Ms. Leilani Kub IV
-                                                    </td>
-                                                    <td> 1218594566 </td>
-                                                    <td>2023-11-07</td>
-                                                    <td>19:30:00 to 20:00:00</td>
-                                                    <td>
-                                                                                                                    <span class="badge  badge-success">Complete</span>
-                                                                                                            </td>
-                                                    <td>
-                                                                                                            </td>
-                                                </tr>
-                                                                                            <tr>
-                                                    <td>3</td>
-                                                    <td> BHealth Buddy Doctor
-                                                    </td>
-                                                    <td> Ms. Leilani Kub IV
-                                                    </td>
-                                                    <td> 1218594566 </td>
-                                                    <td>2023-11-07</td>
-                                                    <td>19:30:00 to 20:00:00</td>
-                                                    <td>
-                                                                                                                    <span class="badge  badge-success">Complete</span>
-                                                                                                            </td>
-                                                    <td>
-                                                                                                            </td>
-                                                </tr>
-                                                                                    </tbody>
+                                        <tbody id="appointmentList"></tbody>
+
                                     </table>
                                 </div>
                                 <div class="col-md-12 text-center mt-3">
@@ -253,6 +195,7 @@
 
 
         <!-- JAVASCRIPT -->
+        <script src="/models/fetch-today-appointments.js"></script>
         <script src="/assets/libs/jquery/jquery.min.js"></script>
         <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
         <script src="/assets/libs/metismenu/metismenu.min.js"></script>
