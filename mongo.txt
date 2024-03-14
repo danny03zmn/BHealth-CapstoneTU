@@ -1,5 +1,0 @@
-username: capstone_project
-password: jDwOGLIKSPaiYsEz
-
-Data API Key Name: bhbuddy
-Data API Key: 3TgBzZgSdir72E8XVtgmHTS1cfyhAou9nKpGoihNi1izDzsMttkC5BIGzaHwRXop
