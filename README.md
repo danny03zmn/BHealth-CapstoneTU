@@ -1,5 +1,5 @@
 # WareXCapstoneI
-=======
+
 # Capstone I - BHealth Buddy
 
 # Dashboard
