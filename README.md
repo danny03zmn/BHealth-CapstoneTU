@@ -1,4 +1,4 @@
-# BHealth Buddy Appointment Management Web Platform Setup Guide
+# Appointment Management Web Platform Setup Guide
 
 Welcome to the setup guide for the BHealth Buddy Appointment Management Web Platform. This guide will walk you through the steps to clone the repository, set up the environment, install necessary packages, and run the platform on your local machine.
 
