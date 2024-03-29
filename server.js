@@ -61,7 +61,7 @@ app.post('/login', async (req, res) => {
   
     try {
       const admin = await Admin.findOne({ email: email });
-      if (!admin || password !== admin.password) { // Use bcrypt for real password check
+      if (!admin || password !== admin.password) {
         res.status(401).json({ message: 'Invalid credentials' });
       } else {
         // Store hospitalId in session after successful login
@@ -77,7 +77,7 @@ app.post('/login', async (req, res) => {
 app.get('/appointments/', async (req, res) => {
     try {
       const hospitalId = req.session.hospitalId;
-      const appointments = await Appointment.find({ hospitalId: hospitalId, status: 'Pending' });
+      const appointments = await Appointment.find({ hospitalId: hospitalId, status: 'Pending' })
       console.log(`Hospital ID ${hospitalId}`);
       console.log(`appointments ${appointments}`);
       res.json(appointments);
@@ -135,7 +135,8 @@ app.get('/appointments/today', async (req, res) => {
           appointmentDate: {
               $gte: startOfDay,
               $lte: endOfDay
-          }
+          },
+          status: 'Confirmed'
       });
 
       res.json(todayAppointments);
