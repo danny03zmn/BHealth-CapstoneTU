@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Add Patient | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="Hospital Appointment System" name="description" />
+    <meta content="BHealth Buddy" name="author" />
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap4.min.css"
+    />
+    <link
+      href="/assets/css/bootstrap.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/assets/css/patient.css" />
+  </head>
+
+  <body data-topbar="dark" data-layout="horizontal">
+    <div id="layout-wrapper">
+      <div id="navbar-placeholder"></div>
+      <div class="main-content">
+        <div class="page-content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div
+                  class="page-title-box d-flex align-items-center justify-content-between"
+                >
+                  <h4 class="mb-0 font-size-18">Add Patient</h4>
+                  <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                      <li class="breadcrumb-item">
+                        <a href="index.html">Dashboard</a>
+                      </li>
+                      <li class="breadcrumb-item">
+                        <a href="patients.html">Patients</a>
+                      </li>
+                      <li class="breadcrumb-item active">Add Patient</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Patient Form -->
+            <div class="row">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-body">
+                    <form id="addPatientForm">
+                      <div class="form-group">
+                        <label for="patientName">Patient Name</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="patientName"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="patientContactNum">Contact Number</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="patientContactNum"
+                          required
+                        />
+                      </div>
+                      <button type="submit" class="btn btn-primary">
+                        Submit
+                      </button>
+                      <a href="patients.html" class="btn btn-secondary"
+                        >Cancel</a
+                      >
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="footer-placeholder"></div>
+      </div>
+    </div>
+
+    <!-- Notification Alert -->
+    <div
+      id="notificationBox"
+      class="alert"
+      role="alert"
+      style="
+        display: none;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      "
+    ></div>
+
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
+    <script src="/assets/js/add-patient.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/footer.js"></script>
+  </body>
+</html>

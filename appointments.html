@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Appointments | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="Hospital Appointment System" name="description" />
+    <meta content="BHealth Buddy" name="author" />
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap4.min.css"
+    />
+    <link
+      href="/assets/css/bootstrap.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/appointments.css" />
+  </head>
+  <body data-topbar="dark" data-layout="horizontal">
+    <div id="preloader">
+      <div id="status">
+        <div class="spinner-chase">
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+        </div>
+      </div>
+    </div>
+    <div id="layout-wrapper">
+      <div id="navbar-placeholder"></div>
+      <div class="main-content">
+        <div class="page-content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div
+                  class="page-title-box d-flex align-items-center justify-content-between"
+                >
+                  <h4 class="mb-0 font-size-18">Appointments</h4>
+                  <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                      <li class="breadcrumb-item">
+                        <a href="index.html">Dashboard</a>
+                      </li>
+                      <li class="breadcrumb-item">Appointments</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs for Appointment Status -->
+            <div class="row">
+              <div class="col-12">
+                <ul class="nav nav-tabs nav-justified" id="appointmentTabs">
+                  <li class="nav-item">
+                    <a class="nav-link active" data-tab="today"
+                      >Today's Appointments</a
+                    >
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-tab="pending"
+                      >Pending Appointments</a
+                    >
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-tab="upcoming"
+                      >Upcoming Appointments</a
+                    >
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-tab="completed"
+                      >Completed Appointments</a
+                    >
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-tab="cancelled"
+                      >Cancelled Appointments</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Entries Selector and Search Box -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <label
+                  >Show
+                  <select
+                    id="entriesSelector"
+                    class="custom-select custom-select-sm"
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                  </select>
+                  entries
+                </label>
+              </div>
+              <div>
+                <label
+                  >Search:
+                  <input
+                    type="text"
+                    id="searchBox"
+                    class="form-control form-control-sm"
+                    placeholder="Search Patient Name"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <!-- Appointment List Table -->
+            <div class="tab-content">
+              <table
+                id="appointmentList"
+                class="table table-bordered dt-responsive nowrap"
+              >
+                <thead>
+                  <tr>
+                    <th class="sortable" data-column="id">
+                      Appointment ID <span class="sort-arrow">&#9650;</span>
+                    </th>
+                    <th>Doctor Name</th>
+                    <th>Doctor Contact</th>
+                    <th>Patient Name</th>
+                    <th>Patient Contact</th>
+                    <th class="sortable" data-column="scheduleddatetime">
+                      Date & Time <span class="sort-arrow">&#9650;</span>
+                    </th>
+                    <th>Remarks</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody></tbody>
+              </table>
+              <!-- Pagination Controls -->
+              <div
+                class="d-flex justify-content-between align-items-center mt-3"
+              >
+                <div>
+                  <span id="entriesInfo">Showing 1 to 5 of 0 entries</span>
+                </div>
+                <div>
+                  <ul
+                    class="pagination pagination-sm mb-0"
+                    id="paginationControls"
+                  ></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="footer-placeholder"></div>
+      </div>
+    </div>
+
+    <!-- Edit Appointment Modal -->
+    <div id="editAppointmentModal" class="modal fade" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Appointment</h5>
+            <button type="button" class="close" data-dismiss="modal">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editAppointmentForm">
+              <input type="hidden" id="appointmentId" />
+              <div class="form-group">
+                <label>Doctor Name</label>
+                <select id="doctorName" class="form-control"></select>
+              </div>
+              <div class="form-group">
+                <label>Doctor Contact</label>
+                <input
+                  type="text"
+                  id="doctorContact"
+                  class="form-control"
+                  disabled
+                />
+              </div>
+              <div class="form-group">
+                <label>Patient Name</label>
+                <input
+                  type="text"
+                  id="patientName"
+                  class="form-control"
+                  disabled
+                />
+              </div>
+              <div class="form-group">
+                <label>Patient Contact</label>
+                <input
+                  type="text"
+                  id="patientContact"
+                  class="form-control"
+                  disabled
+                />
+              </div>
+              <div class="form-group">
+                <label>Date & Time</label>
+                <input
+                  type="datetime-local"
+                  id="appointmentDateTime"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="appointmentStatus" class="form-control">
+                  <option value="pending">Pending</option>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Remarks</label>
+                <textarea
+                  id="appointmentRemarks"
+                  class="form-control"
+                ></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
+    <script src="/assets/libs/metismenu/metismenu.min.js"></script>
+    <script src="/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="/assets/js/app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="/assets/js/appointments-main.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/footer.js"></script>
+  </body>
+</html>

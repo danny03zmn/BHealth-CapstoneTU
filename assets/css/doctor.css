@@ -1,0 +1,10 @@
+#doctorList_length label {
+  display: inline-flex;
+  align-items: center;
+  gap: 04px;
+}
+
+#doctorList th {
+  text-align: center;
+  vertical-align: middle;
+}

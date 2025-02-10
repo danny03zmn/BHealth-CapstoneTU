@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Edit Appointment | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="Hospital Appointment System" name="description" />
+    <meta content="BHealth Buddy" name="author" />
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" />
+    <link
+      href="/assets/css/bootstrap.min.css"
+      id="bootstrap-light"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/assets/libs/toastr/toastr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.40/moment-timezone-with-data.min.js"></script>
+  </head>
+
+  <body data-topbar="dark" data-layout="horizontal">
+    <div id="preloader">
+      <div id="status">
+        <div class="spinner-chase">
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+          <div class="chase-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="layout-wrapper">
+      <div id="navbar-placeholder"></div>
+
+      <div class="main-content">
+        <div class="page-content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div
+                  class="page-title-box d-flex align-items-center justify-content-between"
+                >
+                  <h4 class="mb-0 font-size-18">Edit Appointment</h4>
+                  <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                      <li class="breadcrumb-item">
+                        <a href="/index.html">Dashboard</a>
+                      </li>
+                      <li class="breadcrumb-item">
+                        <a href="/appointments.html">Appointments</a>
+                      </li>
+                      <li class="breadcrumb-item active">Edit</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xl-12">
+                <div class="card">
+                  <div class="card-body">
+                    <form id="editAppointmentForm">
+                      <div class="form-group">
+                        <label>Doctor</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="doctorName"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Patient</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="patientName"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Scheduled Date & Time</label>
+                        <input
+                          type="datetime-local"
+                          class="form-control"
+                          id="scheduledDateTime"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" id="status" required>
+                          <option value="pending">Pending</option>
+                          <option value="upcoming">Upcoming</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>Remarks</label>
+                        <textarea
+                          class="form-control"
+                          id="remarks"
+                          rows="3"
+                        ></textarea>
+                      </div>
+                      <button type="submit" class="btn btn-primary">
+                        Save Changes
+                      </button>
+                      <a href="/appointments.html" class="btn btn-secondary"
+                        >Cancel</a
+                      >
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="footer-placeholder"></div>
+      </div>
+    </div>
+
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
+    <script src="/assets/libs/metismenu/metismenu.min.js"></script>
+    <script src="/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="/assets/libs/toastr/toastr.min.js"></script>
+    <script src="/assets/libs/node-waves/node-waves.min.js"></script>
+    <script src="/assets/js/app.min.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/footer.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const appointmentId = urlParams.get("id");
+
+        if (!appointmentId) {
+          window.location.href = "/appointments.html";
+          return;
+        }
+
+        // Fetch appointment details
+        fetch(`/api/appointments/${appointmentId}`)
+          .then((response) => {
+            if (!response.ok) throw new Error("Appointment not found");
+            return response.json();
+          })
+          .then((appointment) => {
+            document.getElementById("doctorName").value =
+              appointment.doctorName;
+            document.getElementById("patientName").value =
+              appointment.patientName;
+            document.getElementById("scheduledDateTime").value =
+              formatDateTimeForInput(appointment.scheduleddatetime);
+            document.getElementById("status").value = appointment.status;
+            document.getElementById("remarks").value = appointment.remarks;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            toastr.error(error.message);
+            window.location.href = "/appointments.html";
+          });
+
+        // Form submission
+        document
+          .getElementById("editAppointmentForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const scheduledDateTime =
+              document.getElementById("scheduledDateTime").value;
+            const status = document.getElementById("status").value;
+            const remarks = document.getElementById("remarks").value;
+
+            if (!scheduledDateTime) {
+              toastr.error("Scheduled DateTime is required");
+              return;
+            }
+
+            // ✅ Convert local time (Asia/Kuala_Lumpur) to UTC before sending
+            const utcDateTime = moment
+              .tz(scheduledDateTime, "Asia/Kuala_Lumpur")
+              .utc()
+              .format(); // Converts correctly to UTC
+
+            const updatedData = {
+              scheduleddatetime: utcDateTime, // Send UTC datetime to the server
+              status: status,
+              remarks: remarks,
+            };
+
+            // Send the update request
+            fetch(`/api/appointments/${appointmentId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedData),
+            })
+              .then((response) => {
+                if (!response.ok) throw new Error("Update failed");
+                return response.json();
+              })
+              .then(() => {
+                toastr.success("Appointment updated successfully");
+                setTimeout(() => {
+                  window.location.href = "/appointments.html";
+                }, 1500);
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                toastr.error(error.message);
+              });
+          });
+
+        // ✅ Convert UTC time to Local Time for display in the datetime-local input
+        function formatDateTimeForInput(isoString) {
+          if (!isoString) return "";
+
+          return moment
+            .utc(isoString)
+            .tz("Asia/Kuala_Lumpur")
+            .format("YYYY-MM-DDTHH:mm"); // Properly converts to local
+        }
+      });
+    </script>
+  </body>
+</html>

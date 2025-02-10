@@ -1,231 +1,545 @@
-// Importing Express and other libraries
-import 'dotenv/config';
-import express from 'express';
-import bodyParser from 'body-parser';
-import mongoose from 'mongoose';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import session from 'express-session';
-import Admin from './models/Admin.js';
-import Appointment from './models/Appointment.js';
-import crypto from 'crypto';
-import Doctor from './models/Doctor.js';
+import express from "express";
+import { Sequelize, DataTypes, Op } from "sequelize"; // Import Op for querying
+import session from "express-session";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import crypto from "crypto";
+import Doctor from "./models/Doctor.js"; // Import the Doctor model
+import Clinic from "./models/Clinic.js"; // Import the Doctor model
+import Appointment from "./models/Appointment.js"; // Import the Doctor model
+import Patient from "./models/Patient.js"; // Import the Doctor model
+import moment from "moment-timezone";
+
+Clinic.hasMany(Doctor, { foreignKey: "clinicid", as: "doctors" });
+Doctor.belongsTo(Clinic, { foreignKey: "clinicid", as: "clinic" });
+Doctor.hasMany(Appointment, { foreignKey: "doctorid", as: "appointments" });
+Appointment.belongsTo(Doctor, { foreignKey: "doctorid", as: "doctor" });
+Patient.hasMany(Appointment, { foreignKey: "patientid", as: "appointments" });
+Appointment.belongsTo(Patient, { foreignKey: "patientid", as: "patient" });
+
+dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
+// Middleware for parsing JSON requests
+app.use(express.json());
 
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+// Configure PostgreSQL connection
+const sequelize = new Sequelize(process.env.POSTGRES_URL, {
+  dialect: "postgres",
+  dialectOptions: {
+    ssl: {
+      require: true,
+      ca: fs.readFileSync(path.resolve("./cert/ca-certificate.crt")).toString(),
+    },
+  },
+  logging: false,
 });
 
-// Determine the directory name by using fileURLToPath and path.dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Test the database connection
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("PostgreSQL connected successfully");
+  } catch (err) {
+    console.error("Error connecting to PostgreSQL:", err);
+  }
+})();
 
-// Serve login.html for the root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+// Sync models with the database
+sequelize
+  .sync({ alter: true }) // Use alter for development; use migrations in production
+  .then(() => console.log("Database synced"))
+  .catch((err) => console.error("Error syncing database:", err));
+
+// Configure session
+const secret = crypto.randomBytes(32).toString("hex");
+app.use(
+  session({
+    secret: secret,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+    },
+  })
+);
+console.log("Session secret:", secret);
+
+// Serve static files from the 'public' directory
+const publicDir = path.resolve(".");
+app.use(express.static(publicDir));
+
+// Default route: Serve index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
-// Serve static files after defining specific routes
-app.use(express.static('.'));
+// Routes for managing doctor data
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// GET /api/doctors - Fetch doctors with pagination and search
+app.get("/api/doctors", async (req, res) => {
+  const { search, limit = 10, page = 1 } = req.query;
+  const offset = (page - 1) * limit;
 
+  try {
+    const whereClause = { rowstatus: { [Op.ne]: "Deleted" } };
 
-
-const secret = crypto.randomBytes(32).toString('hex');
-
-// Session configuration
-app.use(session({
-    secret: secret, // This is a secret key used for signing the session ID cookie
-    resave: false, // Don't save session if unmodified
-    saveUninitialized: true, // Don't create session until something is stored
-    cookie: { secure: 'auto' } // Use 'true' if you serve your site over HTTPS, 'auto' to auto-detect
-  }));
-  
-console.log(secret);
-// Add this route to handle login submissions
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-  
-    try {
-      const admin = await Admin.findOne({ email: email });
-      if (!admin || password !== admin.password) {
-        res.status(401).json({ message: 'Invalid credentials' });
-      } else {
-        // Store hospitalId in session after successful login
-        req.session.hospitalId = admin.hospitalId;
-        res.json({ message: 'Login successful', redirect: '/index.html' });
-      }
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+    if (search) {
+      whereClause.doctorname = { [Op.iLike]: `%${search}%` };
     }
-  });
 
-app.get('/appointments/', async (req, res) => {
-    try {
-      const hospitalId = req.session.hospitalId;
-      const appointments = await Appointment.find({ hospitalId: hospitalId, status: 'Pending' })
-      console.log(`Hospital ID ${hospitalId}`);
-      console.log(`appointments ${appointments}`);
-      res.json(appointments);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('Server error fetching appointments');
+    const { count, rows } = await Doctor.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Clinic,
+          as: "clinic",
+          attributes: ["id", "clinicname"], // Fetch clinic name
+        },
+      ],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    const formattedDoctors = rows.map((doctor) => ({
+      id: doctor.id,
+      doctorName: doctor.doctorname,
+      docContactNum: doctor.doccontactnum,
+      docEmail: doctor.docemail,
+      clinicId: doctor.clinic ? doctor.clinic.id : null,
+      clinicName: doctor.clinic ? doctor.clinic.clinicname : "N/A",
+      countPending: doctor.countpending || 0,
+      countConfirmed: doctor.countconfirmed || 0,
+      countCompleted: doctor.countcompleted || 0,
+    }));
+
+    res.json({ doctors: formattedDoctors, total: count });
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/doctors", async (req, res) => {
+  const { doctorName, doctorEmail, doctorContactNum, workingClinic } = req.body;
+
+  if (!doctorName || !doctorEmail || !doctorContactNum || !workingClinic) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const newDoctor = await Doctor.create({
+      doctorname: doctorName,
+      docemail: doctorEmail,
+      doccontactnum: doctorContactNum,
+      clinicid: workingClinic,
+      countpending: 0,
+      countconfirmed: 0,
+      countcompleted: 0,
+    });
+
+    res
+      .status(201)
+      .json({ message: "Doctor added successfully", doctorId: newDoctor.id });
+  } catch (error) {
+    console.error("Failed to add doctor:", error);
+    res.status(500).json({ message: "Failed to add doctor" });
+  }
+});
+
+// PATCH /api/doctors/:id - Mark a doctor as deleted by updating rowstatus
+app.patch("/api/doctors/:id", async (req, res) => {
+  try {
+    const doctorId = req.params.id;
+
+    // Update rowstatus to 'Deleted'
+    const updatedDoctor = await Doctor.update(
+      { rowstatus: "Deleted" },
+      { where: { id: doctorId } }
+    );
+
+    if (!updatedDoctor[0]) {
+      // Sequelize update returns [numberOfAffectedRows]
+      return res.status(404).json({ message: "Doctor not found" });
     }
-  });
-  
-  
-  // Route to update appointment status to 'Cancelled'
-app.post('/appointments/cancel', async (req, res) => {
-  const { appointmentId } = req.body;
-  try {
-      const updatedAppointment = await Appointment.findByIdAndUpdate(appointmentId, { status: 'Cancelled' }, { new: true });
-      if (updatedAppointment) {
-          res.json({ message: 'Appointment cancelled successfully' });
-      } else {
-          res.status(404).send('Appointment not found');
-      }
+
+    res.json({ message: "Doctor marked as deleted successfully" });
   } catch (error) {
-      console.error(error);
-      res.status(500).send('Error updating appointment status');
+    console.error("Failed to mark doctor as deleted:", error);
+    res.status(500).json({ message: "Failed to mark doctor as deleted" });
   }
 });
 
-// Route to update appointment status to 'Confirmed'
-app.post('/appointments/confirm', async (req, res) => {
-  const { appointmentId } = req.body;
+// DELETE /api/doctors/:id - Soft delete a doctor by updating rowstatus
+app.delete("/api/doctors/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-      const updatedAppointment = await Appointment.findByIdAndUpdate(appointmentId, { status: 'Confirmed' }, { new: true });
-      if (updatedAppointment) {
-          res.json({ message: 'Appointment confirmed successfully' });
-      } else {
-          res.status(404).send('Appointment not found');
-      }
+    const doctor = await Doctor.findByPk(id);
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    // Mark the doctor as deleted by updating rowstatus
+    await doctor.update({ rowstatus: "Deleted" });
+
+    res.json({ message: "Doctor deleted successfully" });
   } catch (error) {
-      console.error(error);
-      res.status(500).send('Error updating appointment status');
+    console.error("Error deleting doctor:", error);
+    res.status(500).json({ message: "Failed to delete doctor" });
   }
 });
 
-
-app.get('/appointments/today', async (req, res) => {
-  // Get today's date and set time to 00:00:00 for comparison
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  // Set end of today for comparison (23:59:59)
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+// Add API endpoint for clinics in server.js
+app.get("/api/clinics", async (req, res) => {
+  const { search, limit = 5, page = 1 } = req.query;
+  const offset = (page - 1) * limit;
 
   try {
-      const todayAppointments = await Appointment.find({
-          appointmentDate: {
-              $gte: startOfDay,
-              $lte: endOfDay
-          },
-          status: 'Confirmed'
-      });
+    const whereClause = {
+      rowstatus: { [Op.ne]: "Deleted" },
+    };
 
-      res.json(todayAppointments);
+    if (search) {
+      whereClause.clinicname = { [Op.iLike]: `%${search}%` };
+    }
+
+    const { count, rows } = await Clinic.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    const formattedClinics = rows.map((clinic) => ({
+      id: clinic.id,
+      clinicName: clinic.clinicname,
+      clinicContactNum: clinic.cliniccontactnum,
+      location: clinic.location,
+      countDoctors: clinic.countdoctors || 0,
+    }));
+
+    res.json({ clinics: formattedClinics, total: count });
   } catch (error) {
-      console.error(error);
-      res.status(500).send('Server error fetching today\'s appointments');
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-
-app.get('/appointments/upcoming', async (req, res) => {
-  const today = new Date();
-  today.setHours(0,0,0,0); // Set to start of today to exclude past appointments
+app.put("/api/clinics/:id", async (req, res) => {
+  const { id } = req.params;
+  const { clinicName, clinicContactNum, location, countDoctors } = req.body;
 
   try {
-      const upcomingAppointments = await Appointment.find({
-          appointmentDate: { $gte: today }, // Greater than or equal to today
-          status: 'Confirmed' // Only confirmed appointments
-      }).sort('appointmentDate'); // Optional: Sort by date if needed
+    const clinic = await Clinic.findByPk(id); // Find the clinic by ID
 
-      res.json(upcomingAppointments);
+    if (!clinic) {
+      return res.status(404).json({ message: "Clinic not found" });
+    }
+
+    // Update the clinic details
+    await clinic.update({
+      clinicname: clinicName,
+      cliniccontactnum: clinicContactNum,
+      location: location,
+      countdoctors: countDoctors,
+    });
+
+    res.json({
+      message: "Clinic updated successfully",
+      clinic,
+    });
   } catch (error) {
-      console.error('Error fetching upcoming confirmed appointments:', error);
-      res.status(500).send('Server error');
+    console.error("Error updating clinic:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
+// POST /api/clinics - Add a new clinic
+app.post("/api/clinics", async (req, res) => {
+  const { clinicName, clinicContactNum, location } = req.body;
 
-app.get('/appointments/complete', async (req, res) => {
-  // Get today's date at 00:00:00 in UTC
-  const today = new Date(new Date().setUTCHours(0,0,0,0));
-  console.log("Comparing appointments before:", today.toISOString());
+  if (!clinicName || !clinicContactNum || !location) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
 
   try {
-      const completeAppointments = await Appointment.find({
-          appointmentDate: { $lt: today }, // Appointments before today (in UTC)
-          status: 'Confirmed'
-      }).sort('-appointmentDate'); // Sorting by date in descending order
+    const newClinic = await Clinic.create({
+      clinicname: clinicName,
+      cliniccontactnum: clinicContactNum,
+      location: location,
+      countdoctors: 0, // Default to 0 doctors initially
+    });
 
-      res.json(completeAppointments);
+    res
+      .status(201)
+      .json({ message: "Clinic added successfully", clinicId: newClinic.id });
   } catch (error) {
-      console.error('Error fetching complete (past confirmed) appointments:', error);
-      res.status(500).send('Server error');
+    console.error("Failed to add clinic:", error);
+    res.status(500).json({ message: "Failed to add clinic" });
   }
 });
 
+// GET /api/appointments - Fetch appointments with filtering by status
+app.get("/api/appointments", async (req, res) => {
+  const {
+    status,
+    sort = "id",
+    order = "asc",
+    limit = 5,
+    page = 1,
+    search,
+  } = req.query;
+  const offset = (page - 1) * limit;
+  const todayStart = moment().startOf("day").utc().toISOString();
+  const todayEnd = moment().endOf("day").utc().toISOString();
 
-app.get('/appointments/cancelled', async (req, res) => {
+  let whereClause = { rowstatus: "Active" };
+
+  if (status === "today") {
+    whereClause.status = "upcoming";
+    whereClause.scheduleddatetime = { [Op.between]: [todayStart, todayEnd] };
+  } else if (status && status !== "all") {
+    whereClause.status = status;
+  }
+
+  // Search filter for patient name
+  if (search) {
+    whereClause["$patient.patientname$"] = { [Op.iLike]: `%${search}%` };
+  }
+
+  // Ensure only valid sortable columns are used
+  const validSortColumns = ["id", "scheduleddatetime"];
+  const sortColumn = validSortColumns.includes(sort) ? sort : "id";
+  const sortOrder = order === "desc" ? "DESC" : "ASC";
+
   try {
-      const cancelledAppointments = await Appointment.find({
-          status: 'Cancelled'
-      }).sort('-appointmentDate'); // Sorting by date in descending order to show the most recent first
+    const { count, rows } = await Appointment.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: ["id", "doctorname", "doccontactnum"],
+        },
+        {
+          model: Patient,
+          as: "patient",
+          attributes: ["id", "patientname", "patcontactnum"],
+        },
+      ],
+      order: [[sortColumn, sortOrder]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
 
-      res.json(cancelledAppointments);
+    const formattedAppointments = rows.map((appointment) => ({
+      id: appointment.id,
+      doctorId: appointment.doctor ? appointment.doctor.id : null,
+      doctorName: appointment.doctor
+        ? appointment.doctor.doctorname
+        : "Unknown",
+      docContactNum: appointment.doctor
+        ? appointment.doctor.doccontactnum
+        : "N/A",
+      patientId: appointment.patient ? appointment.patient.id : null,
+      patientName: appointment.patient
+        ? appointment.patient.patientname
+        : "Unknown",
+      patContactNum: appointment.patient
+        ? appointment.patient.patcontactnum
+        : "N/A",
+      scheduleddatetime: appointment.scheduleddatetime,
+      status: appointment.status,
+      remarks: appointment.remarks || "",
+    }));
+
+    res.json({ appointments: formattedAppointments, total: count });
   } catch (error) {
-      console.error('Error fetching cancelled appointments:', error);
-      res.status(500).send('Server error during the retrieval of cancelled appointments');
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// GET /api/appointments/:id - Fetch a single appointment by ID
+app.get("/api/appointments/:id", async (req, res) => {
+  try {
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: ["id", "doctorname", "doccontactnum"],
+        },
+        {
+          model: Patient,
+          as: "patient",
+          attributes: ["id", "patientname", "patcontactnum"],
+        },
+      ],
+    });
 
-app.get('/api/getHospitalId', (req, res) => {
-  if (req.session && req.session.hospitalId) {
-    res.json({ hospitalId: req.session.hospitalId });
-  } else {
-    res.status(404).json({ message: 'Hospital ID not found in session' });
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    res.json({
+      id: appointment.id,
+      doctorId: appointment.doctor ? appointment.doctor.id : null,
+      doctorName: appointment.doctor
+        ? appointment.doctor.doctorname
+        : "Unknown",
+      docContactNum: appointment.doctor
+        ? appointment.doctor.doccontactnum
+        : "N/A",
+      patientId: appointment.patient ? appointment.patient.id : null,
+      patientName: appointment.patient
+        ? appointment.patient.patientname
+        : "Unknown",
+      patContactNum: appointment.patient
+        ? appointment.patient.patcontactnum
+        : "N/A",
+      scheduleddatetime: appointment.scheduleddatetime,
+      status: appointment.status,
+      remarks: appointment.remarks || "",
+    });
+  } catch (error) {
+    console.error("Error fetching appointment:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
+app.put("/api/appointments/:id", async (req, res) => {
+  const { doctorId, scheduleddatetime, status, remarks } = req.body;
 
-app.post('/api/doctors', async (req, res) => {
   try {
-      const hospitalId = req.session.hospitalId;
-      const doctor = new Doctor({
-          firstName: req.body.firstName,
-          lastName: req.body.lastName,
-          department: req.body.department,
-          email: req.body.email,
-          contactNumber: req.body.contactNumber,
-          slotTime: req.body.slotTime,
-          availableTimes: req.body.availableTimes,
-          availableDays: req.body.availableDays,
-          hospitalId: hospitalId
-      });
+    const appointment = await Appointment.findByPk(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
 
-      await doctor.save();
-      res.status(201).json({ message: 'Doctor added successfully', doctorId: doctor._id });
+    await appointment.update({
+      doctorid: doctorId || appointment.doctorid, // Keep existing doctor if not changed
+      scheduleddatetime: moment
+        .utc(scheduleddatetime)
+        .format("YYYY-MM-DD HH:mm:ss"), // Store in UTC
+      status: status || appointment.status,
+      remarks: remarks !== undefined ? remarks : appointment.remarks,
+    });
+
+    res.json({ message: "Appointment updated successfully" });
   } catch (error) {
-      console.error('Failed to add doctor:', error);
-      res.status(500).json({ message: 'Failed to add doctor' });
+    console.error("Error updating appointment:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// GET /api/patients - Fetch patients with pagination and search
+app.get("/api/patients", async (req, res) => {
+  const { search, limit = 10, page = 1 } = req.query;
+  const offset = (page - 1) * limit;
+
+  try {
+    const whereClause = { rowstatus: { [Op.ne]: "Deleted" } };
+
+    if (search) {
+      whereClause.patientname = { [Op.iLike]: `%${search}%` };
+    }
+
+    const { count, rows } = await Patient.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    const formattedPatients = rows.map((patient) => ({
+      id: patient.id,
+      patientName: patient.patientname,
+      contactNumber: patient.patcontactnum,
+      lastVisit: patient.lastvisit
+        ? moment(patient.lastvisit).toISOString()
+        : null,
+    }));
+
+    res.json({ patients: formattedPatients, total: count });
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /api/patients/:id - Update patient details
+app.put("/api/patients/:id", async (req, res) => {
+  const { id } = req.params;
+  const { patientName, patientContactNum } = req.body;
+
+  try {
+    const patient = await Patient.findByPk(id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    await patient.update({
+      patientname: patientName,
+      patcontactnum: patientContactNum,
+    });
+
+    res.json({ message: "Patient updated successfully", patient });
+  } catch (error) {
+    console.error("Error updating patient:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /api/patients - Add a new patient
+app.post("/api/patients", async (req, res) => {
+  const { patientName, patientContactNum } = req.body;
+
+  if (!patientName || !patientContactNum) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const newPatient = await Patient.create({
+      patientname: patientName,
+      patcontactnum: patientContactNum,
+      lastvisit: null, // No last visit initially
+      rowstatus: "Active",
+    });
+
+    res.status(201).json({
+      message: "Patient added successfully",
+      patientId: newPatient.id,
+    });
+  } catch (error) {
+    console.error("Failed to add patient:", error);
+    res.status(500).json({ message: "Failed to add patient" });
+  }
+});
+
+// DELETE /api/patients/:id - Soft delete a patient by updating rowstatus
+app.delete("/api/patients/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const patient = await Patient.findByPk(id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Mark the patient as deleted by updating rowstatus
+    await patient.update({ rowstatus: "Deleted" });
+
+    res.json({ message: "Patient deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting patient:", error);
+    res.status(500).json({ message: "Failed to delete patient" });
+  }
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });

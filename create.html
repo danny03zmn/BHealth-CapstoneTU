@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dashboard | BHealth Buddy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="Hospital Appointment System" name="description" />
+    <meta content="BHealth Buddy" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" />
+    <!-- App css -->
+    <link
+      href="/assets/css/bootstrap.min.css"
+      id="bootstrap-light"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/assets/libs/toastr/toastr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/assets/libs/select2/select2.min.css"
+    />
+  </head>
+
+  <body data-topbar="dark" data-layout="horizontal">
+    <!-- Begin page -->
+    <div id="layout-wrapper">
+      <div id="navbar-placeholder"></div>
+      <div class="main-content">
+        <div class="page-content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <h4 class="mb-0 font-size-18">Add New Doctor</h4>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="card">
+                  <div class="card-body">
+                    <form id="createDoctorForm">
+                      <input type="hidden" name="_token" />
+                      <div class="row">
+                        <div class="col-md-12 form-group">
+                          <label class="control-label"
+                            >Doctor Name
+                            <span class="text-danger">*</span></label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            name="docname"
+                            id="docname"
+                            placeholder="Enter Doctor Name"
+                          />
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-12 form-group">
+                          <label class="control-label"
+                            >Email <span class="text-danger">*</span></label
+                          >
+                          <input
+                            type="email"
+                            class="form-control"
+                            name="docemail"
+                            id="docemail"
+                            placeholder="Enter Email"
+                          />
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-12 form-group">
+                          <label class="control-label"
+                            >Contact Number
+                            <span class="text-danger">*</span></label
+                          >
+                          <input
+                            type="tel"
+                            class="form-control"
+                            name="doccontactnum"
+                            id="doccontactnum"
+                            placeholder="eg. 6012-3456789"
+                          />
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-12 form-group">
+                          <label class="control-label"
+                            >Working Clinic
+                            <span class="text-danger">*</span></label
+                          >
+                          <select
+                            class="form-control"
+                            name="workingclinic"
+                            id="workingclinic"
+                          >
+                            <option value="" disabled selected>
+                              Select Clinic
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <button type="submit" class="btn btn-primary">
+                            Add New Doctor
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- content -->
+        </div>
+        <div id="footer-placeholder"></div>
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
+    <script src="/assets/js/app.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Fetch clinics and populate the select element
+        fetch("/api/clinics")
+          .then((response) => response.json())
+          .then((data) => {
+            const clinicSelect = document.getElementById("workingclinic");
+            data.forEach((clinic) => {
+              const option = document.createElement("option");
+              option.value = clinic.id; // Set the value to the clinic ID
+              option.textContent = clinic.clinicname; // Set the display text to the clinic name
+              clinicSelect.appendChild(option);
+            });
+          })
+          .catch((error) => console.error("Error fetching clinics:", error));
+
+        // Handle form submission
+        document
+          .getElementById("createDoctorForm")
+          .addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const formData = new FormData(this); // Create a FormData object from the form
+            const data = {
+              docname: formData.get("docname"), // Ensure these names match the input names
+              docemail: formData.get("docemail"),
+              doccontactnum: formData.get("doccontactnum"),
+              workingclinic: formData.get("workingclinic"),
+            };
+
+            fetch("/api/doctors", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data), // Send the data as JSON
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.message === "Doctor added successfully") {
+                  // Show success alert
+                  alert("Doctor has been added successfully!");
+                  // Redirect to a specific page (e.g., the doctors list page)
+                  window.location.href = "/doctor.html"; // Change this to your desired URL
+                } else {
+                  // Show error alert
+                  alert(
+                    "Failed to add doctor: " + (data.message || "Unknown error")
+                  );
+                  // Do not clear the form fields
+                }
+              });
+            console.error("Error:", error);
+            alert("An error occurred while adding the doctor.");
+          });
+      });
+    </script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/footer.js"></script>
+  </body>
+</html>

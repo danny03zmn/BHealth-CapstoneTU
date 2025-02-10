@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Dashboard | BHealth Buddy</title>
+    <title>Clinic List | BHealth Buddy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta content="Hospital Appointment System" name="description" />
     <meta content="BHealth Buddy" name="author" />
@@ -27,20 +27,7 @@
     />
     <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <link href="/assets/css/app.min.css" rel="stylesheet" type="text/css" />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="/assets/libs/toastr/toastr.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-    />
-    <link rel="stylesheet" href="/assets/css/doctor.css" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="/assets/css/clinic.css" />
   </head>
 
   <body data-topbar="dark" data-layout="horizontal">
@@ -67,13 +54,13 @@
                 <div
                   class="page-title-box d-flex align-items-center justify-content-between"
                 >
-                  <h4 class="mb-0 font-size-18">Doctor List</h4>
+                  <h4 class="mb-0 font-size-18">Clinic List</h4>
                   <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                       <li class="breadcrumb-item">
                         <a href="index.html">Dashboard</a>
                       </li>
-                      <li class="breadcrumb-item">Doctors</li>
+                      <li class="breadcrumb-item">Clinics</li>
                     </ol>
                   </div>
                 </div>
@@ -82,23 +69,20 @@
 
             <div class="row">
               <div class="col-12">
-                <div></div>
                 <div class="card">
                   <div class="card-body">
                     <div class="row mb-3">
                       <div class="col-md-6">
-                        <label for="entriesSelector">
-                          Show
+                        <label for="entriesSelector"
+                          >Show
                           <select
                             id="entriesSelector"
                             class="form-control d-inline-block"
                             style="width: auto"
                           >
-                            <option value="5" selected>5</option>
+                            <option value="5">5</option>
                             <option value="10">10</option>
                             <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
                           </select>
                           entries
                         </label>
@@ -111,33 +95,22 @@
                             id="searchField"
                             class="form-control d-inline-block"
                             style="width: auto"
-                            placeholder="Search by Doctor Name"
+                            placeholder="Search by Clinic Name"
                           />
                         </label>
                       </div>
                     </div>
                     <table
-                      id="doctorList"
+                      id="clinicList"
                       class="table table-bordered dt-responsive nowrap"
-                      style="
-                        border-collapse: collapse;
-                        border-spacing: 0;
-                        width: 100%;
-                      "
                     >
                       <thead>
                         <tr>
-                          <th rowspan="2">Doctor Name</th>
-                          <th rowspan="2">Contact Number</th>
-                          <th rowspan="2">Email</th>
-                          <th rowspan="2">Clinic Name</th>
-                          <th colspan="3">Appointments</th>
-                          <th rowspan="2">Option</th>
-                        </tr>
-                        <tr>
-                          <th>Pending</th>
-                          <th>Confirmed</th>
-                          <th>Completed</th>
+                          <th>Clinic Name</th>
+                          <th>Contact Number</th>
+                          <th>Location</th>
+                          <th>Doctors Available</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody></tbody>
@@ -151,34 +124,26 @@
                       <div class="col-md-6">
                         <div
                           class="dataTables_paginate paging_full_numbers"
-                          id="doctorList_paginate"
+                          id="clinicList_paginate"
                         >
                           <ul class="pagination justify-content-end">
                             <li
                               class="paginate_button page-item first disabled"
-                              id="doctorList_first"
                             >
                               <a href="#" class="page-link">First</a>
                             </li>
                             <li
                               class="paginate_button page-item previous disabled"
-                              id="doctorList_previous"
                             >
                               <a href="#" class="page-link">Previous</a>
                             </li>
                             <li class="paginate_button page-item active">
                               <a href="#" class="page-link">1</a>
                             </li>
-                            <li
-                              class="paginate_button page-item next disabled"
-                              id="doctorList_next"
-                            >
+                            <li class="paginate_button page-item next disabled">
                               <a href="#" class="page-link">Next</a>
                             </li>
-                            <li
-                              class="paginate_button page-item last disabled"
-                              id="doctorList_last"
-                            >
+                            <li class="paginate_button page-item last disabled">
                               <a href="#" class="page-link">Last</a>
                             </li>
                           </ul>
@@ -209,18 +174,18 @@
       "
     ></div>
 
-    <!-- Edit Doctor Modal -->
+    <!-- Edit Clinic Modal -->
     <div
       class="modal fade"
-      id="editDoctorModal"
+      id="editClinicModal"
       tabindex="-1"
-      aria-labelledby="editDoctorModalLabel"
+      aria-labelledby="editClinicModalLabel"
       aria-hidden="true"
     >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="editDoctorModalLabel">Edit Doctor</h5>
+            <h5 class="modal-title" id="editClinicModalLabel">Edit Clinic</h5>
             <button
               type="button"
               class="close"
@@ -231,70 +196,44 @@
             </button>
           </div>
           <div class="modal-body">
-            <form id="editDoctorForm">
-              <input type="hidden" id="doctorId" />
+            <form id="editClinicForm">
+              <input type="hidden" id="clinicId" />
               <div class="form-group">
-                <label for="doctorName">Doctor Name</label>
+                <label for="clinicName">Clinic Name</label>
                 <input
                   type="text"
                   class="form-control"
-                  id="doctorName"
+                  id="clinicName"
                   required
                 />
               </div>
               <div class="form-group">
-                <label for="docContactNum">Contact Number</label>
+                <label for="clinicContactNum">Contact Number</label>
                 <input
                   type="text"
                   class="form-control"
-                  id="docContactNum"
+                  id="clinicContactNum"
                   required
                 />
               </div>
               <div class="form-group">
-                <label for="docEmail">Email</label>
+                <label for="location">Location</label>
                 <input
-                  type="email"
+                  type="text"
                   class="form-control"
-                  id="docEmail"
+                  id="location"
                   required
                 />
               </div>
               <div class="form-group">
-                <label for="clinicId">Clinic Name</label>
-                <select
-                  class="form-control select2"
-                  id="clinicId"
-                  required
-                ></select>
-                <!-- Searchable Dropdown -->
-              </div>
-              <div class="form-group">
-                <label for="countPending">Pending Appointments</label>
+                <label for="countDoctors">Doctors Available</label>
                 <input
                   type="number"
                   class="form-control"
-                  id="countPending"
+                  id="countDoctors"
                   disabled
                 />
-              </div>
-              <div class="form-group">
-                <label for="countConfirmed">Confirmed Appointments</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="countConfirmed"
-                  disabled
-                />
-              </div>
-              <div class="form-group">
-                <label for="countCompleted">Completed Appointments</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="countCompleted"
-                  disabled
-                />
+                <!-- Greyed out -->
               </div>
               <button type="submit" class="btn btn-primary">
                 Save Changes
@@ -309,12 +248,7 @@
     <script src="/assets/libs/bootstrap/bootstrap.min.js"></script>
     <script src="/assets/libs/metismenu/metismenu.min.js"></script>
     <script src="/assets/libs/simplebar/simplebar.min.js"></script>
-    <script src="/assets/libs/toastr/toastr.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <script src="/assets/libs/jszip/jszip.min.js"></script>
-    <script src="/assets/libs/pdfmake/pdfmake.min.js"></script>
-
-    <script src="/assets/js/doctors/main.js"></script>
+    <script src="/assets/js/clinics/main.js"></script>
     <script src="/assets/js/app.min.js"></script>
     <script src="/assets/js/navbar.js"></script>
     <script src="/assets/js/footer.js"></script>

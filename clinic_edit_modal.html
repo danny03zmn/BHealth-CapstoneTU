@@ -1,0 +1,65 @@
+<!-- Modal for Editing Clinic -->
+<div
+  class="modal fade"
+  id="editClinicModal"
+  tabindex="-1"
+  aria-labelledby="editClinicModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editClinicModalLabel">Edit Clinic</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editClinicForm">
+          <div class="form-group">
+            <label for="clinicName">Clinic Name</label>
+            <input type="text" id="clinicName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label for="clinicContact">Contact Number</label>
+            <input
+              type="text"
+              id="clinicContact"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="clinicLocation">Location</label>
+            <input
+              type="text"
+              id="clinicLocation"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="clinicDoctors">Doctors Available</label>
+            <input
+              type="number"
+              id="clinicDoctors"
+              class="form-control"
+              disabled
+            />
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/clinics/clinic_edit_modal.js"></script>

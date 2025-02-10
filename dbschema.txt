@@ -1,0 +1,209 @@
+create table clinics
+(
+    id               bigserial
+        primary key,
+    clinicname       text                           not null,
+    cliniccontactnum text                           not null,
+    location         text                           not null,
+    countdoctors     integer default 0,
+    rowstatus        text    default 'Active'::text not null
+);
+
+alter table clinics
+    owner to doadmin;
+
+create table doctors
+(
+    id             bigserial
+        primary key,
+    doctorname     text                           not null,
+    doccontactnum  text                           not null,
+    docemail       text                           not null,
+    clinicid       integer
+        references clinics,
+    countpending   integer default 0,
+    countconfirmed integer default 0,
+    countcompleted integer default 0,
+    rowstatus      text    default 'Active'::text not null
+);
+
+alter table doctors
+    owner to doadmin;
+
+create table patients
+(
+    id            bigserial
+        primary key,
+    patientname   text                        not null,
+    patcontactnum text                        not null,
+    lastvisit     text,
+    rowstatus     text default 'Active'::text not null
+);
+
+alter table patients
+    owner to doadmin;
+
+create table appointments
+(
+    id                bigserial
+        primary key,
+    doctorid          integer
+        references doctors,
+    patientid         integer
+        references patients,
+    scheduleddatetime timestamp                   not null,
+    status            text                        not null
+        constraint appointments_status_check
+            check (status = ANY
+                   (ARRAY [('pending'::character varying)::text, ('upcoming'::character varying)::text, ('completed'::character varying)::text, ('cancelled'::character varying)::text])),
+    remarks           text default ''::text,
+    rowstatus         text default 'Active'::text not null
+);
+
+alter table appointments
+    owner to doadmin;
+
+create table visits
+(
+    id            bigserial
+        primary key,
+    datetime      text,
+    visittype     text,
+    clinicid      integer
+        references clinics,
+    patientid     integer
+        references patients,
+    medinfo       text,
+    doctorremarks text,
+    rowstatus     text    default 'Active'::text not null,
+    session       integer default 1              not null,
+    medname       text
+);
+
+alter table visits
+    owner to doadmin;
+
+create function update_doctor_counts() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  -- Update counts for doctor
+  UPDATE doctors
+  SET countPending = (SELECT COUNT(*) FROM appointments WHERE appointments.doctorId = NEW.doctorId AND status = 'pending'),
+      countConfirmed = (SELECT COUNT(*) FROM appointments WHERE appointments.doctorId = NEW.doctorId AND status = 'upcoming'),
+      countCompleted = (SELECT COUNT(*) FROM appointments WHERE appointments.doctorId = NEW.doctorId AND status = 'completed')
+  WHERE id = NEW.doctorId; -- doctors table uses "id" as its primary key
+  RETURN NULL;
+END;
+$$;
+
+alter function update_doctor_counts() owner to doadmin;
+
+create trigger update_doctor_counts_trigger
+    after insert or update or delete
+    on appointments
+    for each row
+execute procedure update_doctor_counts();
+
+create function update_clinic_doctor_count() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  -- Update countDoctors for the clinic, considering only Active doctors
+  UPDATE clinics
+  SET countDoctors = (
+      SELECT COUNT(*)
+      FROM doctors
+      WHERE doctors.clinicId = NEW.clinicId AND doctors.rowstatus = 'Active'
+  )
+  WHERE id = NEW.clinicId; -- clinics table uses "id" as its primary key
+
+  RETURN NULL;
+END;
+$$;
+
+alter function update_clinic_doctor_count() owner to doadmin;
+
+create trigger update_clinic_doctor_count_trigger
+    after insert or update or delete
+    on doctors
+    for each row
+execute procedure update_clinic_doctor_count();
+
+create function update_last_visit() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  -- Update lastVisit to the latest visit datetime for the patient
+  UPDATE patients
+  SET lastVisit = (SELECT MAX(dateTime) FROM visits WHERE visits.patientId = NEW.patientId)
+  WHERE id = NEW.patientId; -- patients table uses "id" as its primary key
+  RETURN NULL;
+END;
+$$;
+
+alter function update_last_visit() owner to doadmin;
+
+create trigger update_last_visit_trigger
+    after insert or update
+    on visits
+    for each row
+execute procedure update_last_visit();
+
+create function update_visit_session() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    max_session INTEGER;
+BEGIN
+    -- Get the current maximum session value for the patient
+    SELECT COALESCE(MAX(session), 0) INTO max_session
+    FROM visits
+    WHERE patientid = NEW.patientid;
+
+    -- Set the session value for the new visit
+    NEW.session := max_session + 1;
+
+    RETURN NEW;
+END;
+$$;
+
+alter function update_visit_session() owner to doadmin;
+
+create trigger update_visit_session_trigger
+    before insert
+    on visits
+    for each row
+execute procedure update_visit_session();
+
+create function append_to_columns() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+    -- Append new value to medinfo with separator if it exists
+    IF NEW.medinfo IS DISTINCT FROM OLD.medinfo THEN
+        NEW.medinfo := COALESCE(OLD.medinfo || ' // ', '') || NEW.medinfo;
+    END IF;
+
+    -- Append new value to medname with separator if it exists
+    IF NEW.medname IS DISTINCT FROM OLD.medname THEN
+        NEW.medname := COALESCE(OLD.medname || ' // ', '') || NEW.medname;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+alter function append_to_columns() owner to doadmin;
+
+create trigger append_to_columns_trigger
+    before update
+    on visits
+    for each row
+execute procedure append_to_columns();
+
