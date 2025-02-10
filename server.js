@@ -10,6 +10,7 @@ import Clinic from "./models/Clinic.js"; // Import the Doctor model
 import Appointment from "./models/Appointment.js"; // Import the Doctor model
 import Patient from "./models/Patient.js"; // Import the Doctor model
 import moment from "moment-timezone";
+import os from "os";
 
 Clinic.hasMany(Doctor, { foreignKey: "clinicid", as: "doctors" });
 Doctor.belongsTo(Clinic, { foreignKey: "clinicid", as: "clinic" });
@@ -23,22 +24,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Ensure the CA certificate is decoded and saved
+// Determine the correct temporary directory
+const tempDir = os.tmpdir();
+const tempCaCertPath = path.join(tempDir, "ca-cert.crt");
+
 let ca;
 if (process.env.CA_CERT_BASE64) {
+  // Running on DigitalOcean: Decode and write to a temp file
   const decodedCert = Buffer.from(
     process.env.CA_CERT_BASE64,
     "base64"
   ).toString("utf-8");
-  fs.writeFileSync("/tmp/ca-cert.crt", decodedCert);
-  ca = "/tmp/ca-cert.crt";
+  fs.writeFileSync(tempCaCertPath, decodedCert);
+  ca = tempCaCertPath;
+} else if (process.env.CA_CERT_PATH) {
+  // Running locally: Use provided CA certificate path
+  ca = path.resolve(process.env.CA_CERT_PATH);
 } else {
-  console.error(
-    "⚠️ Warning: CA_CERT_BASE64 is not set in environment variables."
-  );
+  console.warn("⚠️ Warning: No CA certificate found. SSL might not work.");
 }
-// Middleware for parsing JSON requests
-app.use(express.json());
 
 // Configure PostgreSQL connection
 const sequelize = new Sequelize(process.env.POSTGRES_URL, {
@@ -46,7 +50,8 @@ const sequelize = new Sequelize(process.env.POSTGRES_URL, {
   dialectOptions: {
     ssl: {
       require: true,
-      ca: ca ? fs.readFileSync(ca, "utf8") : undefined, // Use the certificate
+      rejectUnauthorized: false,
+      ca: ca ? fs.readFileSync(ca, "utf8") : undefined,
     },
   },
   logging: false,
