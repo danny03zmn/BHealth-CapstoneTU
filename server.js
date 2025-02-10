@@ -23,6 +23,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Ensure the CA certificate is decoded and saved
+let ca;
+if (process.env.CA_CERT_BASE64) {
+  const decodedCert = Buffer.from(
+    process.env.CA_CERT_BASE64,
+    "base64"
+  ).toString("utf-8");
+  fs.writeFileSync("/tmp/ca-cert.crt", decodedCert);
+  ca = "/tmp/ca-cert.crt";
+} else {
+  console.error(
+    "⚠️ Warning: CA_CERT_BASE64 is not set in environment variables."
+  );
+}
 // Middleware for parsing JSON requests
 app.use(express.json());
 
@@ -32,7 +46,7 @@ const sequelize = new Sequelize(process.env.POSTGRES_URL, {
   dialectOptions: {
     ssl: {
       require: true,
-      ca: fs.readFileSync(path.resolve("./cert/ca-certificate.crt")).toString(),
+      ca: ca ? fs.readFileSync(ca, "utf8") : undefined, // Use the certificate
     },
   },
   logging: false,
@@ -42,9 +56,9 @@ const sequelize = new Sequelize(process.env.POSTGRES_URL, {
 (async () => {
   try {
     await sequelize.authenticate();
-    console.log("PostgreSQL connected successfully");
+    console.log("✅ PostgreSQL connected successfully");
   } catch (err) {
-    console.error("Error connecting to PostgreSQL:", err);
+    console.error("❌ Error connecting to PostgreSQL:", err);
   }
 })();
 
