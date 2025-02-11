@@ -28,6 +28,10 @@ const PORT = process.env.PORT || 3000;
 const tempDir = os.tmpdir();
 const tempCaCertPath = path.join(tempDir, "ca-cert.crt");
 
+// ✅ Ensure JSON body parsing middleware is used BEFORE routes
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 let ca;
 if (process.env.CA_CERT_BASE64) {
   // Running on DigitalOcean: Decode and write to a temp file
