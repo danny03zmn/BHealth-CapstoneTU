@@ -173,6 +173,32 @@ app.post("/api/doctors", async (req, res) => {
   }
 });
 
+// PUT /api/doctors/:id - Update doctor details
+app.put("/api/doctors/:id", async (req, res) => {
+  const { id } = req.params;
+  const { doctorName, docContactNum, docEmail, clinicId } = req.body;
+
+  try {
+    const doctor = await Doctor.findByPk(id);
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    await doctor.update({
+      doctorname: doctorName || doctor.doctorname,
+      doccontactnum: docContactNum || doctor.doccontactnum,
+      docemail: docEmail || doctor.docemail,
+      clinicid: clinicId || doctor.clinicid,
+    });
+
+    res.json({ message: "Doctor updated successfully", doctor });
+  } catch (error) {
+    console.error("Error updating doctor:", error);
+    res.status(500).json({ message: "Failed to update doctor" });
+  }
+});
+
 // PATCH /api/doctors/:id - Mark a doctor as deleted by updating rowstatus
 app.patch("/api/doctors/:id", async (req, res) => {
   try {
