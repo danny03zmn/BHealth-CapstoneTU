@@ -10,18 +10,23 @@ Visit.init(
       primaryKey: true,
       autoIncrement: true,
     },
+    session: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     datetime: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+      type: DataTypes.DATE, // Change to DATE type
+      allowNull: false,
     },
     visittype: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+      type: DataTypes.STRING, // Ensure proper string handling
+      allowNull: false,
+      defaultValue: "Unknown",
     },
     clinicid: {
       type: DataTypes.INTEGER,
       references: {
-        model: "clinics", // Reference to the clinics table
+        model: "clinics",
         key: "id",
       },
       allowNull: false,
@@ -29,7 +34,7 @@ Visit.init(
     patientid: {
       type: DataTypes.INTEGER,
       references: {
-        model: "patients", // Reference to the patients table
+        model: "patients",
         key: "id",
       },
       allowNull: false,
@@ -38,12 +43,16 @@ Visit.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    medname: {
+      type: DataTypes.TEXT, // Add missing field
+      allowNull: true,
+    },
     doctorremarks: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
     rowstatus: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       defaultValue: "Active",
       allowNull: false,
     },

@@ -9,6 +9,7 @@ import Doctor from "./models/Doctor.js"; // Import the Doctor model
 import Clinic from "./models/Clinic.js"; // Import the Doctor model
 import Appointment from "./models/Appointment.js"; // Import the Doctor model
 import Patient from "./models/Patient.js"; // Import the Doctor model
+import Visit from "./models/Visit.js"; // Ensure the Visit model is imported
 import moment from "moment-timezone";
 import os from "os";
 
@@ -18,6 +19,7 @@ Doctor.hasMany(Appointment, { foreignKey: "doctorid", as: "appointments" });
 Appointment.belongsTo(Doctor, { foreignKey: "doctorid", as: "doctor" });
 Patient.hasMany(Appointment, { foreignKey: "patientid", as: "appointments" });
 Appointment.belongsTo(Patient, { foreignKey: "patientid", as: "patient" });
+Visit.belongsTo(Clinic, { foreignKey: "clinicid", as: "clinic" });
 
 dotenv.config();
 
@@ -585,6 +587,51 @@ app.delete("/api/patients/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting patient:", error);
     res.status(500).json({ message: "Failed to delete patient" });
+  }
+});
+
+app.get("/api/visits", async (req, res) => {
+  const { patientId } = req.query;
+
+  if (!patientId) {
+    return res.status(400).json({ error: "Patient ID is required" });
+  }
+
+  try {
+    const visits = await Visit.findAll({
+      where: { patientid: patientId },
+      include: [
+        {
+          model: Clinic,
+          as: "clinic",
+          attributes: ["clinicname"], // Fetch only clinic name
+        },
+      ],
+      attributes: [
+        "session", // Explicitly select session
+        "datetime",
+        "visittype",
+        "medinfo",
+        "doctorremarks",
+        "medname",
+      ],
+      order: [["session", "DESC"]], // Sort in descending order
+    });
+
+    const formattedVisits = visits.map((visit) => ({
+      session: visit.session, // Ensure session is included
+      datetime: visit.datetime,
+      visittype: visit.visittype,
+      clinicName: visit.clinic ? visit.clinic.clinicname : "Unknown", // Fetch clinic name
+      medinfo: visit.medinfo,
+      doctorremarks: visit.doctorremarks,
+      medname: visit.medname,
+    }));
+
+    res.json(formattedVisits);
+  } catch (error) {
+    console.error("Error fetching visits:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
