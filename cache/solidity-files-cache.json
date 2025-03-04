@@ -1,0 +1,41 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "D:\\Coding_Stuff\\BHealth-CapstoneTU\\contracts\\MedicalRecordAudit.sol": {
+      "lastModificationDate": 1740982533585,
+      "contentHash": "ad7cd3cfb60c5436fed066282d2dbded",
+      "sourceName": "contracts/MedicalRecordAudit.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "MedicalRecordAudit"
+      ]
+    }
+  }
+}

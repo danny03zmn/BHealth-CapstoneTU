@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { ethers } from "ethers";
 import Doctor from "./models/Doctor.js"; // Import the Doctor model
 import Clinic from "./models/Clinic.js"; // Import the Doctor model
 import Appointment from "./models/Appointment.js"; // Import the Doctor model
@@ -102,6 +103,102 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
 
+// Ethereum provider and contract setup
+const { JsonRpcProvider } = ethers.providers;
+const provider = new JsonRpcProvider("https://sepolia.infura.io/v3/cae26b20df414310a789de24a9cc8238");
+const privateKey = process.env.PRIVATE_KEY;
+const wallet = new ethers.Wallet(privateKey, provider);
+
+// Replace with your contract address and ABI (generated when you deploy the contract)
+const contractAddress = "0xee2a307513C6C6f5FAc3F68174AEa36279C64aF0"; 
+const abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "recordId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "recordType",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "action",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "RecordAction",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "recordId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "recordType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "action",
+        "type": "string"
+      }
+    ],
+    "name": "logAction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+const contract = new ethers.Contract(contractAddress, abi, wallet);
+
+// Check network connection
+async function checkNetwork() {
+  try {
+    const network = await provider.getNetwork();
+    console.log("Connected to Blockchain network:", network);
+  } catch (error) {
+    console.error("Error detecting network:", error);
+  }
+}
+
+checkNetwork();
+
 // Routes for managing doctor data
 
 // GET /api/doctors - Fetch doctors with pagination and search
@@ -166,6 +263,24 @@ app.post("/api/doctors", async (req, res) => {
       countcompleted: 0,
     });
 
+    // Log action to the blockchain (log doctor creation)
+    const tx = await contract.logAction(newDoctor.id, "doctor", "INSERT", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
+
     res
       .status(201)
       .json({ message: "Doctor added successfully", doctorId: newDoctor.id });
@@ -193,6 +308,24 @@ app.put("/api/doctors/:id", async (req, res) => {
       docemail: docEmail || doctor.docemail,
       clinicid: clinicId || doctor.clinicid,
     });
+
+    // Log action to the blockchain (log doctor update)
+    const tx = await contract.logAction(doctor.id, "doctor", "UPDATE", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
 
     res.json({ message: "Doctor updated successfully", doctor });
   } catch (error) {
@@ -236,6 +369,24 @@ app.delete("/api/doctors/:id", async (req, res) => {
 
     // Mark the doctor as deleted by updating rowstatus
     await doctor.update({ rowstatus: "Deleted" });
+
+    // Log action to the blockchain (log doctor deletion)
+    const tx = await contract.logAction(id, "doctor", "DELETE", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
 
     res.json({ message: "Doctor deleted successfully" });
   } catch (error) {
@@ -480,6 +631,24 @@ app.put("/api/appointments/:id", async (req, res) => {
       remarks: remarks !== undefined ? remarks : appointment.remarks,
     });
 
+    // Log action to the blockchain (log appointment update)
+    const tx = await contract.logAction(appointment.id, "appointment", "UPDATE", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
+
     res.json({ message: "Appointment updated successfully" });
   } catch (error) {
     console.error("Error updating appointment:", error);
@@ -537,6 +706,24 @@ app.put("/api/patients/:id", async (req, res) => {
       patcontactnum: patientContactNum,
     });
 
+    // Log action to the blockchain (log patient update)
+    const tx = await contract.logAction(patient.id, "patient", "UPDATE", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
+
     res.json({ message: "Patient updated successfully", patient });
   } catch (error) {
     console.error("Error updating patient:", error);
@@ -560,6 +747,24 @@ app.post("/api/patients", async (req, res) => {
       rowstatus: "Active",
     });
 
+    // Log action to the blockchain (log patient creation)
+    const tx = await contract.logAction(newPatient.id, "patient", "INSERT", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
+
     res.status(201).json({
       message: "Patient added successfully",
       patientId: newPatient.id,
@@ -582,6 +787,24 @@ app.delete("/api/patients/:id", async (req, res) => {
 
     // Mark the patient as deleted by updating rowstatus
     await patient.update({ rowstatus: "Deleted" });
+
+    // Log action to the blockchain (log patient deletion)
+    const tx = await contract.logAction(id, "patient", "DELETE", {
+      gasLimit: 500000, // specify gas limit
+      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+    });
+    console.log("Transaction sent:", tx.hash);
+
+    // Wait for the transaction to be mined and get the receipt
+    const receipt = await tx.wait();
+    console.log("Transaction receipt:", receipt);
+
+    // Check the status of the transaction
+    if (receipt.status === 1) {
+      console.log("Blockchain transaction was successful!");
+    } else {
+      console.log("Blockchain transaction failed!");
+    }
 
     res.json({ message: "Patient deleted successfully" });
   } catch (error) {
