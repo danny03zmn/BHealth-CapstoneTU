@@ -1,18 +1,20 @@
 import express from "express";
-import { Sequelize, DataTypes, Op } from "sequelize"; // Import Op for querying
+import { Sequelize, Op } from "sequelize";
 import session from "express-session";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import crypto from "crypto";
+import cors from "cors";
 import { ethers } from "ethers";
-import Doctor from "./models/Doctor.js"; // Import the Doctor model
-import Clinic from "./models/Clinic.js"; // Import the Doctor model
-import Appointment from "./models/Appointment.js"; // Import the Doctor model
-import Patient from "./models/Patient.js"; // Import the Doctor model
-import Visit from "./models/Visit.js"; // Ensure the Visit model is imported
-import moment from "moment-timezone";
 import os from "os";
+import { Client, Account, Users } from "node-appwrite";
+import Doctor from "./models/Doctor.js";
+import Clinic from "./models/Clinic.js";
+import Appointment from "./models/Appointment.js";
+import Patient from "./models/Patient.js";
+import Visit from "./models/Visit.js";
+import cookieParser from "cookie-parser";
+import moment from "moment-timezone";
 
 Clinic.hasMany(Doctor, { foreignKey: "clinicid", as: "doctors" });
 Doctor.belongsTo(Clinic, { foreignKey: "clinicid", as: "clinic" });
@@ -27,31 +29,56 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Determine the correct temporary directory
+const isProduction = process.env.NODE_ENV === "production";
+
+// ----------------------
+// Appwrite Client (No API Key for Authentication)
+// ----------------------
+const client = new Client()
+  .setEndpoint(process.env.APPWRITE_ENDPOINT)
+  .setProject(process.env.APPWRITE_PROJECT_ID);
+
+const account = new Account(client);
+
+// ----------------------
+// CORS Configuration
+// ----------------------
+app.use(
+  cors({
+    origin: isProduction ? "https://bhealth.systems" : "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// ---------------------------
+// Blockchain Configuration
+// ---------------------------
+const { JsonRpcProvider } = ethers.providers;
+const provider = new JsonRpcProvider(process.env.ETH_RPC_URL);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const contract = new ethers.Contract(
+  process.env.CONTRACT_ADDRESS,
+  JSON.parse(process.env.CONTRACT_ABI),
+  wallet
+);
+
+// ---------------------------
+// PostgreSQL Connection with SSL
+// ---------------------------
 const tempDir = os.tmpdir();
 const tempCaCertPath = path.join(tempDir, "ca-cert.crt");
 
-// ✅ Ensure JSON body parsing middleware is used BEFORE routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 let ca;
 if (process.env.CA_CERT_BASE64) {
-  // Running on DigitalOcean: Decode and write to a temp file
   const decodedCert = Buffer.from(
     process.env.CA_CERT_BASE64,
     "base64"
   ).toString("utf-8");
   fs.writeFileSync(tempCaCertPath, decodedCert);
   ca = tempCaCertPath;
-} else if (process.env.CA_CERT_PATH) {
-  // Running locally: Use provided CA certificate path
-  ca = path.resolve(process.env.CA_CERT_PATH);
-} else {
-  console.warn("⚠️ Warning: No CA certificate found. SSL might not work.");
 }
 
-// Configure PostgreSQL connection
 const sequelize = new Sequelize(process.env.POSTGRES_URL, {
   dialect: "postgres",
   dialectOptions: {
@@ -64,7 +91,6 @@ const sequelize = new Sequelize(process.env.POSTGRES_URL, {
   logging: false,
 });
 
-// Test the database connection
 (async () => {
   try {
     await sequelize.authenticate();
@@ -74,132 +100,139 @@ const sequelize = new Sequelize(process.env.POSTGRES_URL, {
   }
 })();
 
-// Sync models with the database
-sequelize
-  .sync({ alter: true }) // Use alter for development; use migrations in production
-  .then(() => console.log("Database synced"))
-  .catch((err) => console.error("Error syncing database:", err));
+// ----------------------
+// Middleware Setup
+// ----------------------
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use("/assets", express.static(path.join(process.cwd(), "assets")));
 
-// Configure session
-const secret = crypto.randomBytes(32).toString("hex");
+// ----------------------
+// Session Configuration
+// ----------------------
+app.use(cookieParser());
 app.use(
   session({
-    secret: secret,
+    secret: process.env.SESSION_SECRET || "default-secret",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? "None" : "Lax",
     },
   })
 );
-console.log("Session secret:", secret);
 
-// Serve static files from the 'public' directory
+// Serve static files from the public directory
 const publicDir = path.resolve(".");
 app.use(express.static(publicDir));
 
-// Default route: Serve index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+// ----------------------
+// Config Route (Expose to Client)
+// ----------------------
+app.get("/config", (req, res) => {
+  res.json({
+    APPWRITE_ENDPOINT: process.env.APPWRITE_ENDPOINT,
+    APPWRITE_PROJECT_ID: process.env.APPWRITE_PROJECT_ID,
+    APPWRITE_API_KEY: process.env.APPWRITE_API_KEY,
+  });
 });
 
-// Ethereum provider and contract setup
-const { JsonRpcProvider } = ethers.providers;
-const provider = new JsonRpcProvider("https://sepolia.infura.io/v3/cae26b20df414310a789de24a9cc8238");
-const privateKey = process.env.PRIVATE_KEY;
-const wallet = new ethers.Wallet(privateKey, provider);
+// ----------------------
+// User Authentication
+// ----------------------
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
-// Replace with your contract address and ABI (generated when you deploy the contract)
-const contractAddress = "0xee2a307513C6C6f5FAc3F68174AEa36279C64aF0"; 
-const abi = [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "recordId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "recordType",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "action",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
-      }
-    ],
-    "name": "RecordAction",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "recordId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "recordType",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "action",
-        "type": "string"
-      }
-    ],
-    "name": "logAction",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-];
-const contract = new ethers.Contract(contractAddress, abi, wallet);
-
-// Check network connection
-async function checkNetwork() {
   try {
-    const network = await provider.getNetwork();
-    console.log("Connected to Blockchain network:", network);
+    // Authenticate user
+    const session = await account.createEmailPasswordSession(email, password);
+
+    // Store session ID in a cookie
+    res.cookie("appwriteSession", session.$id, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+    });
+
+    res.json({ redirect: "/appointments.html", sessionId: session.$id });
   } catch (error) {
-    console.error("Error detecting network:", error);
+    console.error("Login Error:", error);
+    res.status(401).json({ message: "Invalid credentials. Please try again." });
   }
-}
+});
 
-checkNetwork();
+// GET /logout - Destroy session and clear cookies
+app.post("/logout", async (req, res) => {
+  try {
+    const sessionId = req.cookies.appwriteSession;
+    if (sessionId) {
+      await account.deleteSession(sessionId);
+    }
 
-// Routes for managing doctor data
+    res.clearCookie("appwriteSession");
+    res.json({ redirect: "/login.html" });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    res.status(500).json({ message: "Error logging out" });
+  }
+});
+
+// Serve static files (CSS, JS, images)
+const rootDir = path.resolve(".");
+app.use(express.static(rootDir));
+
+// ----------------------
+// Serve `appointments.html` as the default page
+// ----------------------
+app.get("/", (req, res) => {
+  res.sendFile(path.join(rootDir, "appointments.html"));
+});
+
+// ----------------------
+// Middleware to Protect Routes
+// ----------------------
+const isAuthenticated = async (req, res, next) => {
+  const sessionId = req.cookies.appwriteSession;
+
+  if (!sessionId) {
+    return res.redirect("/login.html");
+  }
+
+  try {
+    // Ensure Appwrite client has API key
+    client.setKey(process.env.APPWRITE_API_KEY);
+
+    // Set session token before fetching user data
+    client.setSession(sessionId);
+
+    // Fetch user session
+    const user = await account.get();
+
+    if (!user) {
+      throw new Error("User session invalid");
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Session Verification Failed:", error);
+    res.clearCookie("appwriteSession");
+    return res.redirect("/login.html");
+  }
+};
+
+// ----------------------
+// Secure Routes
+// ----------------------
+app.get("/", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(publicDir, "appointments.html"));
+});
+
+app.get("/:page.html", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(publicDir, `${req.params.page}.html`));
+});
 
 // GET /api/doctors - Fetch doctors with pagination and search
 app.get("/api/doctors", async (req, res) => {
@@ -495,27 +528,27 @@ app.get("/api/appointments", async (req, res) => {
     search,
   } = req.query;
   const offset = (page - 1) * limit;
-  const todayStart = moment().startOf("day").utc().toISOString();
-  const todayEnd = moment().endOf("day").utc().toISOString();
 
   let whereClause = { rowstatus: "Active" };
 
   if (status === "today") {
-    whereClause.status = "upcoming";
+    const today = new Date();
+    const todayStart = new Date(today.setHours(0, 0, 0, 0))
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+    const todayEnd = new Date(today.setHours(23, 59, 59, 999))
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
     whereClause.scheduleddatetime = { [Op.between]: [todayStart, todayEnd] };
   } else if (status && status !== "all") {
     whereClause.status = status;
   }
 
-  // Search filter for patient name
   if (search) {
     whereClause["$patient.patientname$"] = { [Op.iLike]: `%${search}%` };
   }
-
-  // Ensure only valid sortable columns are used
-  const validSortColumns = ["id", "scheduleddatetime"];
-  const sortColumn = validSortColumns.includes(sort) ? sort : "id";
-  const sortOrder = order === "desc" ? "DESC" : "ASC";
 
   try {
     const { count, rows } = await Appointment.findAndCountAll({
@@ -532,28 +565,26 @@ app.get("/api/appointments", async (req, res) => {
           attributes: ["id", "patientname", "patcontactnum"],
         },
       ],
-      order: [[sortColumn, sortOrder]],
+      order: [[sort, order === "desc" ? "DESC" : "ASC"]],
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
 
     const formattedAppointments = rows.map((appointment) => ({
       id: appointment.id,
-      doctorId: appointment.doctor ? appointment.doctor.id : null,
       doctorName: appointment.doctor
         ? appointment.doctor.doctorname
         : "Unknown",
       docContactNum: appointment.doctor
         ? appointment.doctor.doccontactnum
         : "N/A",
-      patientId: appointment.patient ? appointment.patient.id : null,
       patientName: appointment.patient
         ? appointment.patient.patientname
         : "Unknown",
       patContactNum: appointment.patient
         ? appointment.patient.patcontactnum
         : "N/A",
-      scheduleddatetime: appointment.scheduleddatetime,
+      scheduleddatetime: appointment.scheduleddatetime, // ✅ No conversion
       status: appointment.status,
       remarks: appointment.remarks || "",
     }));
@@ -587,6 +618,11 @@ app.get("/api/appointments/:id", async (req, res) => {
       return res.status(404).json({ error: "Appointment not found" });
     }
 
+    // Convert DB timestamp (UTC) to Asia/Kuala Lumpur timezone
+    const localDateTime = moment(appointment.scheduleddatetime)
+      .tz("Asia/Kuala_Lumpur")
+      .format("YYYY-MM-DDTHH:mm"); // Keep it in `datetime-local` format
+
     res.json({
       id: appointment.id,
       doctorId: appointment.doctor ? appointment.doctor.id : null,
@@ -603,7 +639,7 @@ app.get("/api/appointments/:id", async (req, res) => {
       patContactNum: appointment.patient
         ? appointment.patient.patcontactnum
         : "N/A",
-      scheduleddatetime: appointment.scheduleddatetime,
+      scheduleddatetime: localDateTime, // ✅ Now correctly converted
       status: appointment.status,
       remarks: appointment.remarks || "",
     });
@@ -623,19 +659,22 @@ app.put("/api/appointments/:id", async (req, res) => {
     }
 
     await appointment.update({
-      doctorid: doctorId || appointment.doctorid, // Keep existing doctor if not changed
-      scheduleddatetime: moment
-        .utc(scheduleddatetime)
-        .format("YYYY-MM-DD HH:mm:ss"), // Store in UTC
+      doctorid: doctorId || appointment.doctorid,
+      scheduleddatetime: scheduleddatetime, // ✅ No UTC conversion
       status: status || appointment.status,
       remarks: remarks !== undefined ? remarks : appointment.remarks,
     });
 
     // Log action to the blockchain (log appointment update)
-    const tx = await contract.logAction(appointment.id, "appointment", "UPDATE", {
-      gasLimit: 500000, // specify gas limit
-      gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
-    });
+    const tx = await contract.logAction(
+      appointment.id,
+      "appointment",
+      "UPDATE",
+      {
+        gasLimit: 500000, // specify gas limit
+        gasPrice: ethers.utils.parseUnits("20", "gwei"), // specify gas price
+      }
+    );
     console.log("Transaction sent:", tx.hash);
 
     // Wait for the transaction to be mined and get the receipt
@@ -679,7 +718,10 @@ app.get("/api/patients", async (req, res) => {
       patientName: patient.patientname,
       contactNumber: patient.patcontactnum,
       lastVisit: patient.lastvisit
-        ? moment(patient.lastvisit).toISOString()
+        ? new Date(patient.lastvisit)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ") // ✅ No Moment.js
         : null,
     }));
 

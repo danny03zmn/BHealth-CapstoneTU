@@ -1,3 +1,26 @@
+async function fetchData(endpoint) {
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const data = await response.json();
+    console.log(data);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    window.location.href = "/login.html";
+  }
+}
+
+fetchData("/api/clinics");
+
 let currentPage = 1;
 let totalEntries = 0;
 

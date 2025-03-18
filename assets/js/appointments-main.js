@@ -1,77 +1,96 @@
 document.addEventListener("DOMContentLoaded", function () {
+  console.log("✅ JavaScript Loaded: appointments-main.js");
+
   const appointmentTabs = document.querySelectorAll(
     "#appointmentTabs .nav-link"
   );
   const appointmentTableBody = document.querySelector("#appointmentList tbody");
   let currentTab = "today";
-
-  let sortColumn = "id"; // Default sorting column
-  let sortOrder = "asc"; // Default sorting order
-  let currentPage = 1; // Default page
-  let entriesPerPage = 5; // Default rows per page
-  let searchQuery = ""; // Default empty search
-  let isSorting = false; // Prevent multiple simultaneous requests
+  let sortColumn = "id";
+  let sortOrder = "asc";
+  let currentPage = 1;
+  let entriesPerPage = 5;
+  let searchQuery = "";
+  let isSorting = false;
 
   function fetchAppointments(status) {
+    console.log(`🔄 Fetching appointments for status: ${status}`);
+
     return fetch(
       `/api/appointments?status=${status}&sort=${sortColumn}&order=${sortOrder}&limit=${entriesPerPage}&page=${currentPage}&search=${searchQuery}`
     )
       .then((response) => response.json())
       .then((data) => {
+        console.log("✅ API Response Data:", data);
+
+        if (!data.appointments || data.appointments.length === 0) {
+          console.warn("⚠ No appointments received.");
+        }
+
         populateTable(data.appointments);
         updatePagination(data.total);
         updateEntriesInfo(data.total);
-        attachSortingListeners(); // 🔥 Reattach sorting listeners after fetching new data
       })
-      .catch((error) => console.error("Error fetching appointments:", error));
+      .catch((error) =>
+        console.error("❌ Error fetching appointments:", error)
+      );
   }
 
   function populateTable(appointments) {
-    const appointmentTableBody = document.querySelector(
-      "#appointmentList tbody"
-    );
-    appointmentTableBody.innerHTML = "";
+    console.log("🔄 Populating Table with Appointments:", appointments);
 
-    if (appointments.length === 0) {
-      appointmentTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No records found</td></tr>`;
+    const tableBody = document.querySelector("#appointmentList tbody");
+    tableBody.innerHTML = "";
+
+    if (!appointments || appointments.length === 0) {
+      console.warn("⚠ populateTable received empty data.");
+      tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No records found</td></tr>`;
       return;
     }
 
     appointments.forEach((appointment) => {
+      console.log("🔹 Processing Appointment:", appointment);
+
+      // ✅ Convert timestamp to a readable format (MM/DD/YYYY, h:mm:ss A)
+      const storedTimestamp = appointment.scheduleddatetime; // Already correct from DB
+      const dateObj = new Date(storedTimestamp.replace(" ", "T")); // Ensure correct parsing
+      const formattedDate = dateObj.toLocaleString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+
       const row = document.createElement("tr");
       row.innerHTML = `
-            <td>${appointment.id}</td>
-            <td>${appointment.doctorName || "Unknown"}</td>
-            <td>${appointment.docContactNum || "N/A"}</td>
-            <td>${appointment.patientName || "Unknown"}</td>
-            <td>${appointment.patContactNum || "N/A"}</td>
-            <td>${convertUtcToLocal(appointment.scheduleddatetime)}</td>
-            <td>${appointment.remarks || ""}</td>
-            <td>
-                <button class="btn btn-primary btn-sm edit-btn" data-id="${
-                  appointment.id
-                }">Edit</button>
-            </td>
-        `;
-      appointmentTableBody.appendChild(row);
+        <td>${appointment.id}</td>
+        <td>${appointment.doctorName || "Unknown"}</td>
+        <td>${appointment.docContactNum || "N/A"}</td>
+        <td>${appointment.patientName || "Unknown"}</td>
+        <td>${appointment.patContactNum || "N/A"}</td>
+        <td>${formattedDate}</td>
+        <td>${appointment.remarks || ""}</td>
+        <td>
+          <button class="btn btn-primary btn-sm edit-btn" data-id="${
+            appointment.id
+          }">Edit</button>
+        </td>
+      `;
+
+      tableBody.appendChild(row);
     });
 
+    console.log("✅ Table populated successfully.");
     attachSortingListeners();
-  }
-
-  // Convert UTC timestamp to local system time format
-  function convertUtcToLocal(utcTimestamp) {
-    if (!utcTimestamp) return "N/A";
-
-    const date = new Date(utcTimestamp);
-    return date.toLocaleString(); // Uses user's local time settings
   }
 
   function attachSortingListeners() {
     document.querySelectorAll(".sortable").forEach((header) => {
       header.style.cursor = "pointer";
 
-      // Remove previous event listener before adding a new one
       header.removeEventListener("click", handleSorting);
       header.addEventListener("click", handleSorting);
     });
@@ -90,25 +109,18 @@ document.addEventListener("DOMContentLoaded", function () {
       sortOrder = "asc";
     }
 
-    // Reset sorting arrows
     document.querySelectorAll(".sort-arrow").forEach((arrow) => {
       arrow.innerHTML = "";
     });
 
-    // Set the sorting arrow for the selected column
     const arrow = event.currentTarget.querySelector(".sort-arrow");
     if (arrow) {
       arrow.innerHTML = sortOrder === "asc" ? "&#9650;" : "&#9660;";
     }
 
-    // Fetch sorted data
-    fetchAppointments(currentTab)
-      .then(() => {
-        isSorting = false;
-      })
-      .catch(() => {
-        isSorting = false;
-      });
+    fetchAppointments(currentTab).then(() => {
+      isSorting = false;
+    });
   }
 
   function updateEntriesInfo(total) {
@@ -127,21 +139,24 @@ document.addEventListener("DOMContentLoaded", function () {
     if (totalPages > 1) {
       paginationControls.innerHTML += `<li class="page-item ${
         currentPage === 1 ? "disabled" : ""
-      }"><a class="page-link" href="#" data-page="${
-        currentPage - 1
-      }">Prev</a></li>`;
+      }">
+        <a class="page-link" href="#" data-page="${
+          currentPage - 1
+        }">Prev</a></li>`;
 
       for (let i = 1; i <= totalPages; i++) {
         paginationControls.innerHTML += `<li class="page-item ${
           i === currentPage ? "active" : ""
-        }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        }">
+          <a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
       }
 
       paginationControls.innerHTML += `<li class="page-item ${
         currentPage === totalPages ? "disabled" : ""
-      }"><a class="page-link" href="#" data-page="${
-        currentPage + 1
-      }">Next</a></li>`;
+      }">
+        <a class="page-link" href="#" data-page="${
+          currentPage + 1
+        }">Next</a></li>`;
     }
 
     document
@@ -205,68 +220,23 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelector("#patientContact").value =
           appointment.patContactNum || "N/A";
 
-        // Convert UTC timestamp to local datetime for input field
-        document.querySelector("#appointmentDateTime").value =
-          convertUtcToInput(appointment.scheduleddatetime);
+        if (appointment.scheduleddatetime) {
+          console.log(
+            "✅ Received appointment datetime:",
+            appointment.scheduleddatetime
+          );
+          document.querySelector("#appointmentDateTime").value =
+            appointment.scheduleddatetime; // Use directly
+        }
+
         document.querySelector("#appointmentStatus").value = appointment.status;
         document.querySelector("#appointmentRemarks").value =
           appointment.remarks || "";
         $("#editAppointmentModal").modal("show");
       })
       .catch((error) =>
-        console.error("Error fetching appointment details:", error)
+        console.error("❌ Error fetching appointment details:", error)
       );
-  }
-
-  // Convert UTC timestamp to local time for datetime-local input field (YYYY-MM-DDTHH:MM format)
-  function convertUtcToInput(utcTimestamp) {
-    if (!utcTimestamp) return "";
-
-    const utcDate = new Date(utcTimestamp);
-    const localDate = new Date(
-      utcDate.getTime() - utcDate.getTimezoneOffset() * 60000
-    );
-    return localDate.toISOString().slice(0, 16); // Format for datetime-local input
-  }
-
-  // Convert Local Time to UTC Before Sending to Server
-  function convertLocalToUtc(localTimestamp) {
-    if (!localTimestamp) return null; // Handle empty input gracefully
-
-    const localDate = new Date(localTimestamp);
-    return new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 19) // Trim milliseconds
-      .replace("T", " "); // Convert to UTC format
-  }
-
-  function formatToLocalDisplay(utcTimestamp) {
-    const localDate = new Date(utcTimestamp);
-    return localDate.toLocaleString();
-  }
-
-  // Function to Show Notifications
-  function showNotification(message, type) {
-    const notificationBox = document.createElement("div");
-    notificationBox.className = `alert alert-${type} alert-dismissible fade show`;
-    notificationBox.role = "alert";
-    notificationBox.innerHTML = `${message}
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>`;
-
-    // Position the notification
-    notificationBox.style.position = "fixed";
-    notificationBox.style.top = "20px";
-    notificationBox.style.right = "20px";
-    notificationBox.style.zIndex = "1050";
-
-    document.body.appendChild(notificationBox);
-
-    // Auto-dismiss notification after 3 seconds
-    setTimeout(() => {
-      notificationBox.remove();
-    }, 3000);
   }
 
   let doctorData = {};
@@ -303,7 +273,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const doctorId = document.getElementById("doctorName").value;
       const localScheduledDateTime = document.getElementById(
         "appointmentDateTime"
-      ).value;
+      ).value; // Use directly
+
       const status = document.getElementById("appointmentStatus").value;
       const remarks = document.getElementById("appointmentRemarks").value;
 
@@ -312,19 +283,16 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Convert local time input back to UTC before saving
-      const utcDateTime = convertLocalToUtc(localScheduledDateTime);
-
       fetch(`/api/appointments/${appointmentId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          doctorId: doctorId,
-          scheduleddatetime: utcDateTime,
-          status: status,
-          remarks: remarks,
+          doctorId,
+          scheduleddatetime: localScheduledDateTime, // ✅ Save exactly as entered
+          status,
+          remarks,
         }),
       })
         .then((response) => response.json())
@@ -342,16 +310,6 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error updating appointment. Please try again.");
         });
     });
-
-  // Convert local datetime input back to UTC correctly before saving
-  function convertLocalToUtc(localDateTime) {
-    if (!localDateTime) return "";
-
-    const localDate = new Date(localDateTime);
-    return new Date(
-      localDate.getTime() - localDate.getTimezoneOffset() * 60000
-    ).toISOString();
-  }
 
   loadDoctors();
 });
