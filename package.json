@@ -22,7 +22,10 @@
     "mongoose": "^8.8.2",
     "node-appwrite": "^15.0.1",
     "pg": "^8.13.1",
-    "sequelize": "^6.37.5"
+    "sequelize": "^6.37.5",
+	"@nomiclabs/hardhat-ethers": "^2.2.3",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.22.19"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
