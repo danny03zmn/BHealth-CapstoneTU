@@ -132,12 +132,6 @@ Future improvements:
 
 ---
 
-## 📸 Screenshots (optional)
-
-*(Add images of your UI, chatbot interaction, or blockchain logs if available)*
-
----
-
 ## 👨‍💻 Contributors
 
 **Project Contributors:** Aqil Danial, Danial Azmin, Anas Anwar, Hadif Shuhaimi, Danial Zulkilfli
